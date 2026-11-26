@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "./api/client";
 import { HeaderBar, Toast, TopNav } from "./components/Shell";
+import { resolveWallpaperCss } from "./components/Wallpapers";
 import { AccountsView } from "./features/AccountsView";
 import { AuthView } from "./features/AuthView";
 import { BudgetsView } from "./features/BudgetsView";
@@ -129,6 +130,7 @@ export default function App() {
   }
 
   const currency = user.preferences?.currency || "USD";
+  const wallpaperCss = resolveWallpaperCss(user.preferences);
 
   return (
     <div className="app">
@@ -139,6 +141,7 @@ export default function App() {
         onBell={() => setNotifOpen(true)}
         hasAlerts={notifications.some((n) => n.kind === "warn")}
         onCycleLanguage={handleCycleLanguage}
+        onGoHome={() => go("dashboard")}
         onGoSettings={() => go("settings")}
         onLogout={handleLogout}
       />
@@ -152,6 +155,7 @@ export default function App() {
               summary={summary}
               accounts={accounts}
               allTransactions={transactions}
+              wallpaperCss={wallpaperCss}
               go={go}
               openAddTx={() => setTxModal("new")}
             />
@@ -162,6 +166,7 @@ export default function App() {
               accounts={accounts}
               categories={categories}
               currency={currency}
+              wallpaperCss={wallpaperCss}
               externalSearch={searchQuery}
               onExternalSearchChange={setSearchQuery}
               onOpenAdd={() => setTxModal("new")}
@@ -187,6 +192,7 @@ export default function App() {
               accounts={accounts}
               transactions={transactions}
               currency={currency}
+              wallpaperCss={wallpaperCss}
               onChanged={async (msg) => {
                 await refreshWorkspace();
                 showToast(msg);
@@ -200,6 +206,7 @@ export default function App() {
               categories={categories}
               transactions={transactions}
               currency={currency}
+              wallpaperCss={wallpaperCss}
               onChanged={async (msg) => {
                 await refreshWorkspace();
                 showToast(msg);
@@ -207,7 +214,9 @@ export default function App() {
               onError={showToast}
             />
           )}
-          {route === "reports" && <ReportsView currency={currency} toast={showToast} />}
+          {route === "reports" && (
+            <ReportsView currency={currency} wallpaperCss={wallpaperCss} toast={showToast} />
+          )}
           {route === "settings" && (
             <SettingsView
               user={user}

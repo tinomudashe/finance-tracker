@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api } from "../api/client";
 import { Icon } from "../components/Icons";
 import { Modal } from "../components/Shell";
+import { PageHeroCard } from "../components/Wallpapers";
 import type { BudgetUtilization, Category, Transaction } from "../types";
 import { fmtDate, fmtMoney, toNum } from "../utils/format";
 
@@ -10,6 +11,7 @@ export function BudgetsView({
   categories,
   transactions,
   currency,
+  wallpaperCss,
   onChanged,
   onError,
 }: {
@@ -17,6 +19,7 @@ export function BudgetsView({
   categories: Category[];
   transactions: Transaction[];
   currency: string;
+  wallpaperCss?: string;
   onChanged: (msg: string) => void;
   onError: (msg: string) => void;
 }) {
@@ -38,24 +41,16 @@ export function BudgetsView({
 
   return (
     <div className="page">
-      <div className="page-head">
-        <div className="page-head__left">
-          <span className="sf-head-icon">
-            <Icon name="budgets" />
-          </span>
-          <div>
-            <div className="page-head__eyebrow">Allocation</div>
-            <h1>Budgets</h1>
-            <div className="sub">
-              {fmtMoney(totalSpent, { cents: false, currency })} spent of{" "}
-              {fmtMoney(totalLimit, { cents: false, currency })} budgeted · {pct}% used
-            </div>
-          </div>
-        </div>
+      <PageHeroCard
+        icon="budgets"
+        title="Budget"
+        subtitle={`${fmtMoney(totalSpent, { cents: false, currency })} spent of ${fmtMoney(totalLimit, { cents: false, currency })} budgeted · ${pct}% used`}
+        wallpaperCss={wallpaperCss}
+      >
         <button className="btn btn--primary" onClick={() => setEditing("new")}>
           <Icon name="plus" /> Create Budget
         </button>
-      </div>
+      </PageHeroCard>
 
       <div className="card card--pad" style={{ marginBottom: 18 }}>
         <div className="between" style={{ marginBottom: 12 }}>
@@ -64,7 +59,7 @@ export function BudgetsView({
             <div className="card-sub">Aggregated via budget_utilization</div>
           </div>
           <div className="num" style={{ fontSize: 24, fontWeight: 700 }}>
-            <span style={{ color: pct > 100 ? "var(--blue)" : "var(--ink)" }}>
+            <span style={{ color: pct > 100 ? "var(--blue-600)" : "var(--ink)" }}>
               {fmtMoney(totalSpent, { cents: false, currency })}
             </span>
             <span className="muted" style={{ fontSize: 16, fontWeight: 600 }}>
@@ -93,17 +88,14 @@ export function BudgetsView({
               key={b.id}
               style={{
                 cursor: "pointer",
-                borderColor: b.over_budget ? "var(--blue)" : "var(--border)",
+                borderColor: b.over_budget ? "var(--blue-600)" : "var(--border)",
                 borderWidth: b.over_budget ? 1.5 : 1,
               }}
               onClick={() => setDetail(b)}
             >
               <div className="between">
                 <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-                  <span
-                    className={"stat__ic " + (b.over_budget ? "stat__ic--black" : "")}
-                    style={{ width: 34, height: 34 }}
-                  >
+                  <span className={"bare-icon " + (b.over_budget ? "bare-icon--blue" : "")}>
                     <Icon name={b.over_budget ? "alert" : "budgets"} />
                   </span>
                   <div>

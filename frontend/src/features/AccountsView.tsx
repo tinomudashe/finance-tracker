@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api } from "../api/client";
 import { Icon } from "../components/Icons";
 import { Modal } from "../components/Shell";
+import { PageHeroCard, PEXELS_WALLPAPERS } from "../components/Wallpapers";
 import type { Account, AccountType, Transaction } from "../types";
 import { fmtDate, fmtMoney, toNum } from "../utils/format";
 
@@ -17,12 +18,14 @@ export function AccountsView({
   accounts,
   transactions,
   currency,
+  wallpaperCss,
   onChanged,
   onError,
 }: {
   accounts: Account[];
   transactions: Transaction[];
   currency: string;
+  wallpaperCss?: string;
   onChanged: (msg: string) => void;
   onError: (msg: string) => void;
 }) {
@@ -30,6 +33,7 @@ export function AccountsView({
   const [editing, setEditing] = useState<Account | "new" | null>(null);
 
   const total = accounts.reduce((s, a) => s + toNum(a.current_balance), 0);
+  const cardBg = wallpaperCss || PEXELS_WALLPAPERS[0].cssImage;
 
   const handleDelete = async (a: Account) => {
     try {
@@ -42,26 +46,23 @@ export function AccountsView({
 
   return (
     <div className="page">
-      <div className="page-head">
-        <div className="page-head__left">
-          <span className="sf-head-icon">
-            <Icon name="accounts" />
-          </span>
-          <div>
-            <div className="page-head__eyebrow">Vaults & Cards</div>
-            <h1>Accounts</h1>
-            <div className="sub">
-              {accounts.length} accounts · total balance{" "}
-              <b className="num" style={{ color: "var(--ink)" }}>
-                {fmtMoney(total, { cents: false, currency })}
-              </b>
-            </div>
-          </div>
-        </div>
+      <PageHeroCard
+        icon="accounts"
+        title="Accounts"
+        subtitle={
+          <>
+            {accounts.length} accounts · total balance{" "}
+            <b className="num" style={{ color: "var(--ink)" }}>
+              {fmtMoney(total, { cents: false, currency })}
+            </b>
+          </>
+        }
+        wallpaperCss={wallpaperCss}
+      >
         <button className="btn btn--primary" onClick={() => setEditing("new")}>
           <Icon name="plus" /> Add Account
         </button>
-      </div>
+      </PageHeroCard>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(310px, 1fr))", gap: 18 }}>
         {accounts.map((a) => {
@@ -70,36 +71,16 @@ export function AccountsView({
             <div
               className="card card--pad"
               key={a.id}
-              style={{ cursor: "pointer", display: "flex", flexDirection: "column", overflow: "hidden" }}
+              style={{ cursor: "pointer", display: "flex", flexDirection: "column" }}
               onClick={() => setDetail(a)}
             >
-              <div
-                style={{
-                  height: 4,
-                  background: neg ? "var(--black-950)" : "var(--blue-600)",
-                  margin: "-22px -24px 18px",
-                }}
-              />
-              <div className="between">
-                <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-                  <span
-                    className={"stat__ic " + (neg ? "stat__ic--black" : "stat__ic--blue")}
-                    style={{ flexShrink: 0 }}
-                  >
-                    <Icon name={KIND_ICON[a.account_type] || "wallet"} />
-                  </span>
-                  <div style={{ minWidth: 0 }}>
-                    <div className="cell-strong" style={{ fontSize: 15 }}>
-                      {a.name}
-                    </div>
-                    <span
-                      className="badge"
-                      style={{ marginTop: 4, textTransform: "capitalize" }}
-                    >
-                      {a.account_type}
-                    </span>
-                  </div>
-                </div>
+              <div className="acct-wallpaper" style={{ backgroundImage: cardBg }}>
+                <span
+                  className={"badge " + (neg ? "badge--black" : "badge--blue")}
+                  style={{ textTransform: "capitalize" }}
+                >
+                  <Icon name={KIND_ICON[a.account_type] || "wallet"} /> {a.account_type}
+                </span>
                 <span className="row-act" onClick={(e) => e.stopPropagation()}>
                   <button className="mini-btn" title="Edit" onClick={() => setEditing(a)}>
                     <Icon name="edit" />
@@ -110,8 +91,17 @@ export function AccountsView({
                 </span>
               </div>
 
-              <div style={{ marginTop: 18 }}>
-                <div className="muted" style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <div className="between">
+                <div className="cell-strong" style={{ fontSize: 16 }}>
+                  {a.name}
+                </div>
+                <span className="muted num" style={{ fontSize: 12, fontWeight: 700 }}>
+                  {a.currency}
+                </span>
+              </div>
+
+              <div style={{ marginTop: 12 }}>
+                <div className="muted" style={{ fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   Balance
                 </div>
                 <div className="num" style={{ fontSize: 29, fontWeight: 700, color: "var(--ink)" }}>

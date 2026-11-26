@@ -2,6 +2,7 @@ import { useState } from "react";
 import { DonutChart, LineChart, resolveBlueBlackColor } from "../components/Charts";
 import { Icon } from "../components/Icons";
 import { Modal } from "../components/Shell";
+import { PageHeroCard } from "../components/Wallpapers";
 import type { Account, DashboardSummary, Preferences, RouteId, Transaction, User } from "../types";
 import { LABELS, fmtDate, fmtMoney, toNum } from "../utils/format";
 
@@ -10,6 +11,7 @@ export function DashboardView({
   summary,
   accounts,
   allTransactions,
+  wallpaperCss,
   go,
   openAddTx,
 }: {
@@ -17,6 +19,7 @@ export function DashboardView({
   summary: DashboardSummary;
   accounts: Account[];
   allTransactions: Transaction[];
+  wallpaperCss?: string;
   go: (r: RouteId) => void;
   openAddTx: () => void;
 }) {
@@ -67,23 +70,16 @@ export function DashboardView({
 
   return (
     <div className="page">
-      <div className="page-head">
-        <div className="page-head__left">
-          <span className="sf-head-icon">
-            <Icon name="dashboard" />
-          </span>
-          <div>
-            <div className="page-head__eyebrow">Overview</div>
-            <h1>
-              {t.welcomeBack}, {firstName}
-            </h1>
-            <div className="sub">{summary.reference_month}</div>
-          </div>
-        </div>
+      <PageHeroCard
+        icon="dashboard"
+        title={`${t.welcomeBack}, ${firstName}`}
+        subtitle={summary.reference_month}
+        wallpaperCss={wallpaperCss}
+      >
         <button className="btn btn--primary" onClick={openAddTx}>
           <Icon name="plus" /> {t.addTransaction}
         </button>
-      </div>
+      </PageHeroCard>
 
       <div className="stat-grid">
         {stats.map((s) => (
@@ -103,7 +99,7 @@ export function DashboardView({
             )}
             {s.progress != null && (
               <div className="bar" style={{ marginTop: 12 }}>
-                <i style={{ width: `${Math.min(100, s.progress)}%`, background: "var(--blue)" }} />
+                <i style={{ width: `${Math.min(100, s.progress)}%`, background: "var(--blue-600)" }} />
               </div>
             )}
           </div>
@@ -188,7 +184,7 @@ export function DashboardView({
                   <div className="between" style={{ marginBottom: 6 }}>
                     <span style={{ fontSize: 13.5, fontWeight: 600 }}>{b.category_name}</span>
                     <span className="num muted" style={{ fontSize: 13 }}>
-                      <b style={{ color: b.over_budget ? "var(--blue)" : "var(--ink)" }}>
+                      <b style={{ color: b.over_budget ? "var(--blue-600)" : "var(--ink)" }}>
                         {fmtMoney(b.amount_spent, { cents: false, currency })}
                       </b>{" "}
                       / {fmtMoney(b.amount_limit, { cents: false, currency })}
@@ -230,10 +226,7 @@ export function DashboardView({
                   style={{ padding: "11px 0", borderBottom: "1px solid var(--line)" }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-                    <span
-                      className={"stat__ic " + (pos ? "stat__ic--blue" : "")}
-                      style={{ width: 34, height: 34, fontSize: 14 }}
-                    >
+                    <span className={"bare-icon " + (pos ? "bare-icon--blue" : "")}>
                       <Icon name={pos ? "trendUp" : "trendDown"} />
                     </span>
                     <div style={{ minWidth: 0 }}>
@@ -347,7 +340,7 @@ function StatDetailModal({
     return (
       <Modal title="Savings rate" onClose={onClose} width={500}>
         <div style={{ textAlign: "center", marginBottom: 18 }}>
-          <div className="num" style={{ fontSize: 48, fontWeight: 700, color: "var(--blue)" }}>
+          <div className="num" style={{ fontSize: 48, fontWeight: 700, color: "var(--blue-600)" }}>
             {summary.savings_rate}%
           </div>
           <div className="muted">of monthly income saved ({fmtMoney(saved, { currency })})</div>

@@ -12,8 +12,10 @@ class PreferencesSchema(BaseModel):
     currency: Literal["USD", "EUR", "GBP"] = "USD"
     avatar_style: str = Field(default="notionists", max_length=40)
     avatar_seed: Optional[str] = Field(default=None, max_length=80)
-    avatar_bg: str = Field(default="0052ff", max_length=16)
+    avatar_bg: str = Field(default="0352ff", max_length=16)
     font_preset: Literal["modern", "heritage", "fintech"] = "modern"
+    card_wallpaper: str = Field(default="contour-blue", max_length=60)
+    custom_wallpaper_url: Optional[str] = Field(default=None, max_length=500)
 
 
 class RegisterRequest(BaseModel):

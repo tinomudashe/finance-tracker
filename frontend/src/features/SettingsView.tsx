@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { AvatarPicker, UserAvatar } from "../components/Avatar";
 import { BLUE_BLACK_SWATCHES, CATEGORY_ICON_OPTIONS, Icon } from "../components/Icons";
 import { Drawer, Modal } from "../components/Shell";
+import { PageHeroCard, resolveWallpaperCss, WallpaperPicker } from "../components/Wallpapers";
 import type { Category, CategoryType, FontPreset, NotificationItem, Preferences, User } from "../types";
 
 export function SettingsView({
@@ -31,13 +32,19 @@ export function SettingsView({
   const [avatarSeed, setAvatarSeed] = useState(
     user.preferences?.avatar_seed || user.full_name || user.email
   );
-  const [avatarBg, setAvatarBg] = useState(user.preferences?.avatar_bg || "0052ff");
+  const [avatarBg, setAvatarBg] = useState(user.preferences?.avatar_bg || "0352ff");
 
   const [theme, setTheme] = useState<Preferences["theme"]>(user.preferences?.theme || "light");
   const [lang, setLang] = useState<Preferences["language"]>(user.preferences?.language || "en");
   const [cur, setCur] = useState<Preferences["currency"]>(user.preferences?.currency || "USD");
   const [fontPreset, setFontPreset] = useState<FontPreset>(
     user.preferences?.font_preset || "modern"
+  );
+  const [cardWallpaper, setCardWallpaper] = useState(
+    user.preferences?.card_wallpaper || "contour-blue"
+  );
+  const [customWallpaperUrl, setCustomWallpaperUrl] = useState(
+    user.preferences?.custom_wallpaper_url || ""
   );
 
   const [catModal, setCatModal] = useState<Category | "new" | null>(null);
@@ -50,6 +57,8 @@ export function SettingsView({
     avatar_seed: avatarSeed,
     avatar_bg: avatarBg,
     font_preset: fontPreset,
+    card_wallpaper: cardWallpaper,
+    custom_wallpaper_url: customWallpaperUrl.trim() || null,
     ...overrides,
   });
 
@@ -93,20 +102,16 @@ export function SettingsView({
     preferences: buildPreferences(),
   };
 
+  const currentWallpaperCss = resolveWallpaperCss(buildPreferences());
+
   return (
     <div className="page" style={{ maxWidth: 980 }}>
-      <div className="page-head">
-        <div className="page-head__left">
-          <span className="sf-head-icon">
-            <Icon name="settings" />
-          </span>
-          <div>
-            <div className="page-head__eyebrow">Workspace</div>
-            <h1>Settings</h1>
-            <div className="sub">Manage your profile, DiceBear avatar, categories and typography</div>
-          </div>
-        </div>
-      </div>
+      <PageHeroCard
+        icon="settings"
+        title="Settings"
+        subtitle="Manage your profile, DiceBear avatar, Pexels card wallpapers and preferences"
+        wallpaperCss={currentWallpaperCss}
+      />
 
       <div className="tabs" style={{ marginBottom: 20 }}>
         <button
@@ -223,18 +228,7 @@ export function SettingsView({
                 }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 600 }}>
-                  <span
-                    className="stat__ic"
-                    style={{
-                      width: 30,
-                      height: 30,
-                      borderRadius: 8,
-                      background: c.color || "var(--blue-600)",
-                      borderColor: c.color || "var(--blue-600)",
-                      color: "#ffffff",
-                      fontSize: 13,
-                    }}
-                  >
+                  <span className="bare-icon" style={{ color: c.color || "var(--blue-600)", fontSize: 18 }}>
                     <Icon name={c.icon || "tag"} />
                   </span>
                   {c.name}
@@ -332,7 +326,10 @@ export function SettingsView({
             </select>
           </div>
 
-          <div className="between" style={{ padding: "15px 0", gap: 16, flexWrap: "wrap" }}>
+          <div
+            className="between"
+            style={{ padding: "15px 0", borderBottom: "1px solid var(--line)", gap: 16, flexWrap: "wrap" }}
+          >
             <div>
               <div style={{ fontWeight: 700 }}>Currency</div>
               <div className="muted" style={{ fontSize: 13 }}>
@@ -351,7 +348,18 @@ export function SettingsView({
             </select>
           </div>
 
-          <div style={{ marginTop: 16 }}>
+          <div style={{ paddingTop: 18 }}>
+            <WallpaperPicker
+              selectedId={cardWallpaper}
+              customUrl={customWallpaperUrl}
+              onChange={(next) => {
+                setCardWallpaper(next.cardWallpaper);
+                setCustomWallpaperUrl(next.customUrl);
+              }}
+            />
+          </div>
+
+          <div style={{ marginTop: 18 }}>
             <button className="btn btn--primary" onClick={savePrefs}>
               <Icon name="check" /> Save preferences
             </button>
@@ -419,7 +427,10 @@ function NotificationList({ notifications }: { notifications: NotificationItem[]
               background: "var(--surface-2)",
             }}
           >
-            <span className={`stat__ic ${variant}`} style={{ flexShrink: 0 }}>
+            <span
+              className={"bare-icon " + (variant === "stat__ic--blue" ? "bare-icon--blue" : "")}
+              style={{ fontSize: 21 }}
+            >
               <Icon name={ic} />
             </span>
             <div style={{ flex: 1 }}>

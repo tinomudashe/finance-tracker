@@ -36,6 +36,9 @@ async def seed_demo_data(db: AsyncSession) -> User:
         if "font_preset" not in prefs:
             prefs["font_preset"] = "modern"
             changed = True
+        if "card_wallpaper" not in prefs:
+            prefs["card_wallpaper"] = "contour-blue"
+            changed = True
         if changed:
             existing.preferences = prefs
         palette_map = {
@@ -79,8 +82,9 @@ async def seed_demo_data(db: AsyncSession) -> User:
             "currency": "USD",
             "avatar_style": "notionists",
             "avatar_seed": "Daniel Brooks",
-            "avatar_bg": "0052ff",
+            "avatar_bg": "0352ff",
             "font_preset": "modern",
+            "card_wallpaper": "contour-blue",
         },
     )
     db.add(user)

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { AvatarPicker, buildDiceBearDataUri, DICEBEAR_STYLES } from "../components/Avatar";
 import { BarChart, DonutChart, LineChart } from "../components/Charts";
 import { Icon } from "../components/Icons";
+import { PEXELS_WALLPAPERS, resolveWallpaperCss } from "../components/Wallpapers";
 import { AuthView } from "../features/AuthView";
 import { DashboardView } from "../features/DashboardView";
 import { fmtK, fmtMoney, LABELS, userInitials } from "../utils/format";
@@ -19,23 +20,35 @@ describe("FinanceTrace formatting & i18n utilities", () => {
 });
 
 describe("AuthView, Flaticon UIcons, DiceBear Avatars & DashboardView", () => {
-  it("toggles between Sign In and Create Account modes with DiceBear style preview", () => {
-    render(<AuthView onAuth={vi.fn()} />);
+  it("toggles between Sign In and Create Account modes with logo and DiceBear style preview", () => {
+    const { container } = render(<AuthView onAuth={vi.fn()} />);
+    expect(container.querySelector('img[src="/logo.svg"]')).not.toBeNull();
     expect(screen.getByText("Explore Demo Workspace (Daniel Brooks)")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
     expect(screen.getByLabelText("Full name")).toBeInTheDocument();
     expect(screen.getByText("Choose Avatar Style (DiceBear)")).toBeInTheDocument();
   });
 
-  it("renders Flaticon UIcons classes and interactive DiceBear AvatarPicker", () => {
+  it("renders Flaticon UIcons, Pexels wallpaper resolver, and interactive DiceBear AvatarPicker", () => {
     const onChange = vi.fn();
     const { container } = render(
       <div>
         <Icon name="wallet" />
-        <AvatarPicker styleId="notionists" seed="Daniel Brooks" bg="0052ff" onChange={onChange} />
+        <Icon name="language" />
+        <AvatarPicker styleId="notionists" seed="Daniel Brooks" bg="0352ff" onChange={onChange} />
       </div>
     );
     expect(container.querySelector("i.fi.fi-rr-wallet")).not.toBeNull();
+    expect(container.querySelector("i.fi.fi-rr-language")).not.toBeNull();
+    expect(PEXELS_WALLPAPERS.length).toBeGreaterThanOrEqual(6);
+    expect(
+      resolveWallpaperCss({
+        theme: "light",
+        language: "en",
+        currency: "USD",
+        card_wallpaper: "pexels-blue-marble",
+      })
+    ).toContain("images.pexels.com/photos/3255761");
     expect(DICEBEAR_STYLES.length).toBeGreaterThanOrEqual(12);
     const uri = buildDiceBearDataUri({ styleId: "lorelei", seed: "Daniel", bg: "05070a" });
     expect(uri.startsWith("data:image/svg+xml")).toBe(true);
@@ -44,7 +57,7 @@ describe("AuthView, Flaticon UIcons, DiceBear Avatars & DashboardView", () => {
     expect(onChange).toHaveBeenCalledWith({
       styleId: "lorelei",
       seed: "Daniel Brooks",
-      bg: "0052ff",
+      bg: "0352ff",
     });
   });
 

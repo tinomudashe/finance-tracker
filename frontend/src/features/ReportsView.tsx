@@ -2,14 +2,17 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { BarChart, resolveBlueBlackColor } from "../components/Charts";
 import { Icon } from "../components/Icons";
+import { PageHeroCard } from "../components/Wallpapers";
 import type { ReportAnalyticsSummary, ReportRecord } from "../types";
 import { fmtMoney, toNum } from "../utils/format";
 
 export function ReportsView({
   currency,
+  wallpaperCss,
   toast,
 }: {
   currency: string;
+  wallpaperCss?: string;
   toast: (m: string) => void;
 }) {
   const [period, setPeriod] = useState<"1m" | "3m" | "6m" | "1y">("3m");
@@ -88,21 +91,21 @@ export function ReportsView({
 
   return (
     <div className="page">
-      <div className="page-head">
-        <div className="page-head__left">
-          <span className="sf-head-icon">
-            <Icon name="reports" />
-          </span>
-          <div>
-            <div className="page-head__eyebrow">Analytics</div>
-            <h1>Reports</h1>
-            <div className="sub">Analyse income, spending and savings over time</div>
-          </div>
-        </div>
-        <button className="btn btn--ghost" onClick={handleExportExcel}>
-          <Icon name="download" /> Export to Excel
+      <PageHeroCard
+        icon="reports"
+        title="Reports"
+        subtitle="Analyse income, spending and savings over time"
+        wallpaperCss={wallpaperCss}
+        rightSlot={
+          <button className="btn btn--ghost btn--sm" onClick={handleExportExcel}>
+            <Icon name="download" /> Export to Excel
+          </button>
+        }
+      >
+        <button className="btn btn--primary" onClick={handleGeneratePdf}>
+          <Icon name="reports" /> Generate PDF Report
         </button>
-      </div>
+      </PageHeroCard>
 
       <div className="card card--pad" style={{ marginBottom: 18 }}>
         <div className="seg" style={{ marginBottom: 16, maxWidth: 560 }}>
@@ -135,9 +138,6 @@ export function ReportsView({
               onChange={(e) => setToDate(e.target.value)}
             />
           </div>
-          <button className="btn btn--primary" style={{ height: 42 }} onClick={handleGeneratePdf}>
-            <Icon name="reports" /> Generate PDF Report
-          </button>
         </div>
       </div>
 

@@ -16,6 +16,8 @@ export interface Preferences {
   avatar_seed?: string | null;
   avatar_bg?: string;
   font_preset?: FontPreset;
+  card_wallpaper?: string;
+  custom_wallpaper_url?: string | null;
 }
 
 export interface User {

@@ -96,8 +96,9 @@ async def register(
             "currency": "USD",
             "avatar_style": payload.avatar_style or "notionists",
             "avatar_seed": payload.avatar_seed or payload.full_name.strip(),
-            "avatar_bg": "0052ff",
+            "avatar_bg": "0352ff",
             "font_preset": "modern",
+            "card_wallpaper": "contour-blue",
         },
     )
     db.add(user)

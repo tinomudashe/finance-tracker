@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+  <rect width="1440" height="900" fill="#f4f3ef"/>
+  <g fill="none" stroke="#0b0f17" stroke-width="5.5" stroke-linecap="round">
+    <path d="M -40 120 C 180 40, 360 -20, 520 -40"/>
+    <path d="M -40 250 C 220 150, 460 60, 720 -40"/>
+    <path d="M -40 390 C 260 280, 560 150, 920 -40"/>
+    <path d="M -40 530 C 310 420, 660 270, 1120 -40"/>
+    <path d="M -40 690 C 360 560, 780 420, 1480 60"/>
+    <path d="M -40 830 C 420 710, 920 580, 1480 230"/>
+    <path d="M 220 940 C 620 810, 1060 720, 1480 410"/>
+    <path d="M 580 940 C 920 850, 1220 790, 1480 610"/>
+    <path d="M 860 -40 C 1060 40, 1260 120, 1480 210"/>
+    <path d="M 640 -40 C 920 90, 1190 220, 1480 350"/>
+  </g>
+</svg>

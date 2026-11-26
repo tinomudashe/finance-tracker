@@ -56,21 +56,15 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
   return (
     <div className="auth-shell">
       <div className="auth-card">
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22 }}>
-          <span className="sf-head-icon">
-            <Icon name="accounts" />
-          </span>
-          <div>
-            <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "var(--font-display)" }}>
-              FinanceTrace
-            </div>
-            <div className="muted" style={{ fontSize: 12.5 }}>
-              Private Institutional & Personal Ledger
-            </div>
-          </div>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
+          <img
+            src="/logo.svg"
+            alt="FinanceTrace"
+            style={{ width: 60, height: 60, borderRadius: 12, display: "block" }}
+          />
         </div>
 
-        <div className="seg" style={{ marginBottom: 20 }}>
+        <div className="seg" style={{ marginBottom: 22 }}>
           <button
             type="button"
             className={mode === "login" ? "active" : ""}
@@ -95,7 +89,7 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
 
         {err && <div className="error-banner">{err}</div>}
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {mode === "register" && (
             <>
               <div className="field">
@@ -121,12 +115,12 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
               </div>
               <div className="field">
                 <label>Choose Avatar Style (DiceBear)</label>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>
                   {DICEBEAR_STYLES.slice(0, 6).map((s) => {
                     const uri = buildDiceBearDataUri({
                       styleId: s.id,
                       seed: previewSeed,
-                      bg: "0052ff",
+                      bg: "0352ff",
                       size: 72,
                     });
                     const active = avatarStyle === s.id;
@@ -137,9 +131,9 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
                         title={s.label}
                         onClick={() => setAvatarStyle(s.id)}
                         style={{
-                          padding: 5,
+                          padding: 6,
                           borderRadius: "var(--r-sm)",
-                          border: active ? "2px solid var(--blue)" : "1px solid var(--border)",
+                          border: active ? "2px solid var(--blue-600)" : "1px solid var(--border)",
                           background: "var(--surface-2)",
                           display: "grid",
                           placeItems: "center",
@@ -148,7 +142,7 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
                         <img
                           src={uri}
                           alt={s.label}
-                          style={{ width: 36, height: 36, borderRadius: 6, display: "block" }}
+                          style={{ width: 38, height: 38, borderRadius: "50%", display: "block" }}
                         />
                       </button>
                     );
@@ -180,14 +174,19 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
               required
             />
           </div>
-          <button className="btn btn--primary" type="submit" disabled={busy} style={{ marginTop: 6 }}>
-            <Icon name="check" /> {busy ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
+          <button
+            className="btn btn--primary"
+            type="submit"
+            disabled={busy}
+            style={{ width: "100%", maxWidth: 340, margin: "8px auto 0", height: 46 }}
+          >
+            {busy ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
           </button>
         </form>
 
         <div
           style={{
-            marginTop: 18,
+            marginTop: 22,
             paddingTop: 16,
             borderTop: "1px solid var(--line)",
             textAlign: "center",
@@ -196,7 +195,7 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
           <button
             type="button"
             className="btn btn--ghost"
-            style={{ width: "100%" }}
+            style={{ width: "100%", maxWidth: 340 }}
             onClick={handleDemo}
             disabled={busy}
           >

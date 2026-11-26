@@ -20,6 +20,7 @@ export const FLATICON_CLASSES: Record<string, string> = {
   search: "fi-rr-search",
   bell: "fi-rr-bell",
   globe: "fi-rr-globe",
+  language: "fi-rr-language",
   close: "fi-rr-cross-small",
   edit: "fi-rr-pencil",
   copy: "fi-rr-duplicate",

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { api } from "../api/client";
 import { Icon } from "../components/Icons";
 import { Badge, Drawer, Modal } from "../components/Shell";
+import { PageHeroCard } from "../components/Wallpapers";
 import type {
   Account,
   Category,
@@ -16,6 +17,7 @@ export function TransactionsView({
   accounts,
   categories,
   currency,
+  wallpaperCss,
   externalSearch,
   onExternalSearchChange,
   onOpenAdd,
@@ -28,6 +30,7 @@ export function TransactionsView({
   accounts: Account[];
   categories: Category[];
   currency: string;
+  wallpaperCss?: string;
   externalSearch: string;
   onExternalSearchChange: (q: string) => void;
   onOpenAdd: () => void;
@@ -73,36 +76,33 @@ export function TransactionsView({
 
   return (
     <div className="page">
-      <div className="page-head">
-        <div className="page-head__left">
-          <span className="sf-head-icon">
-            <Icon name="transactions" />
-          </span>
-          <div>
-            <div className="page-head__eyebrow">Ledger</div>
-            <h1>Transactions</h1>
-            <div className="sub">
-              {filtered.length} of {transactions.length} transactions ·{" "}
-              <span className="num" style={{ fontWeight: 700, color: "var(--pos)" }}>
-                {fmtMoney(totalIn, { cents: false, currency })}
-              </span>{" "}
-              in,{" "}
-              <span className="num" style={{ fontWeight: 700, color: "var(--ink)" }}>
-                {fmtMoney(totalOut, { cents: false, currency })}
-              </span>{" "}
-              out
-            </div>
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button className="btn btn--ghost" onClick={() => setCsvOpen(true)}>
+      <PageHeroCard
+        icon="transactions"
+        title="Transactions"
+        subtitle={
+          <>
+            {filtered.length} of {transactions.length} transactions ·{" "}
+            <span className="num" style={{ fontWeight: 700, color: "var(--pos)" }}>
+              {fmtMoney(totalIn, { cents: false, currency })}
+            </span>{" "}
+            in,{" "}
+            <span className="num" style={{ fontWeight: 700, color: "var(--ink)" }}>
+              {fmtMoney(totalOut, { cents: false, currency })}
+            </span>{" "}
+            out
+          </>
+        }
+        wallpaperCss={wallpaperCss}
+        rightSlot={
+          <button className="btn btn--ghost btn--sm" onClick={() => setCsvOpen(true)}>
             <Icon name="upload" /> Import CSV
           </button>
-          <button className="btn btn--primary" onClick={onOpenAdd}>
-            <Icon name="plus" /> Add Transaction
-          </button>
-        </div>
-      </div>
+        }
+      >
+        <button className="btn btn--primary" onClick={onOpenAdd}>
+          <Icon name="plus" /> Add Transaction
+        </button>
+      </PageHeroCard>
 
       <div style={{ display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
         <div className="search">

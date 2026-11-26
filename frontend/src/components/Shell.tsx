@@ -11,6 +11,7 @@ export function HeaderBar({
   onBell,
   hasAlerts,
   onCycleLanguage,
+  onGoHome,
   onGoSettings,
   onLogout,
 }: {
@@ -20,34 +21,42 @@ export function HeaderBar({
   onBell: () => void;
   hasAlerts: boolean;
   onCycleLanguage: () => void;
+  onGoHome: () => void;
   onGoSettings: () => void;
   onLogout: () => void;
 }) {
   const lang = (user.preferences?.language || "en").toUpperCase();
   return (
     <header className="sf-global">
-      <button className="sf-waffle" title="FinanceTrace App Launcher" onClick={() => onGoSettings()}>
-        <Icon name="apps" />
+      <button
+        type="button"
+        className="brand-logo-btn"
+        title="FinanceTrace Home"
+        onClick={onGoHome}
+      >
+        <img src="/logo.svg" alt="FinanceTrace" className="brand-logo-img" />
       </button>
-      <div className="sf-brand">
-        <b>FinanceTrace</b>
-        <span>Personal Banking</span>
-      </div>
+
       <div className="sf-search">
-        <Icon name="search" />
         <input
           placeholder="Search transactions and categories…"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
         />
+        <Icon name="search" />
       </div>
+
       <div className="sf-global__right">
-        <button className="lang-pill" title="Switch language" onClick={onCycleLanguage}>
-          <Icon name="globe" /> {lang}
-        </button>
         <button className="icon-btn" title="Notifications" onClick={onBell}>
           <Icon name="bell" />
           {hasAlerts && <span className="dot" />}
+        </button>
+        <button
+          className="icon-btn"
+          title={`Switch language (Current: ${lang})`}
+          onClick={onCycleLanguage}
+        >
+          <Icon name="language" />
         </button>
         <button className="icon-btn" title="Settings" onClick={onGoSettings}>
           <Icon name="settings" />
@@ -55,14 +64,12 @@ export function HeaderBar({
         <button className="icon-btn" title="Sign out" onClick={onLogout}>
           <Icon name="logout" />
         </button>
-        <div style={{ marginLeft: 4 }}>
-          <UserAvatar
-            user={user}
-            size={36}
-            onClick={onGoSettings}
-            title={`${user.full_name || user.email} — Click to customize avatar`}
-          />
-        </div>
+        <UserAvatar
+          user={user}
+          size={42}
+          onClick={onGoSettings}
+          title={`${user.full_name || user.email} — Click to customize avatar`}
+        />
       </div>
     </header>
   );
@@ -89,12 +96,6 @@ export function TopNav({
 
   return (
     <nav className="sf-nav">
-      <div className="sf-appname">
-        <span className="sf-appicon">
-          <Icon name="accounts" />
-        </span>
-        <b>Private Ledger</b>
-      </div>
       {items.map((n) => (
         <button
           key={n.id}

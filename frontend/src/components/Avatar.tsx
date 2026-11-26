@@ -40,7 +40,7 @@ export const DICEBEAR_STYLES: DiceBearStyleItem[] = [
 ];
 
 export const AVATAR_BG_SWATCHES: { id: string; hex: string; label: string }[] = [
-  { id: "0052ff", hex: "#0052ff", label: "Royal Blue" },
+  { id: "0352ff", hex: "#0352ff", label: "Royal Blue" },
   { id: "00297a", hex: "#00297a", label: "Vault Navy" },
   { id: "3b82f6", hex: "#3b82f6", label: "Steel Blue" },
   { id: "05070a", hex: "#05070a", label: "Obsidian" },
@@ -50,7 +50,7 @@ export const AVATAR_BG_SWATCHES: { id: string; hex: string; label: string }[] = 
 export function buildDiceBearDataUri({
   styleId = "notionists",
   seed = "FinanceTrace",
-  bg = "0052ff",
+  bg = "0352ff",
   size = 96,
 }: {
   styleId?: string;
@@ -59,7 +59,7 @@ export function buildDiceBearDataUri({
   size?: number;
 }): string {
   const found = DICEBEAR_STYLES.find((s) => s.id === styleId) || DICEBEAR_STYLES[0];
-  const cleanBg = bg.replace(/^#/, "") || "0052ff";
+  const cleanBg = bg.replace(/^#/, "") || "0352ff";
   return createAvatar(found.style, {
     seed: seed.trim() || "FinanceTrace",
     size,
@@ -80,7 +80,7 @@ export function UserAvatar({
 }) {
   const styleId = user.preferences?.avatar_style || "notionists";
   const seed = user.preferences?.avatar_seed || user.full_name || user.email || "User";
-  const bg = user.preferences?.avatar_bg || "0052ff";
+  const bg = user.preferences?.avatar_bg || "0352ff";
 
   const uri = useMemo(
     () => buildDiceBearDataUri({ styleId, seed, bg, size: size * 2 }),
