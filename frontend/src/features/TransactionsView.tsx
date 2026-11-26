@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { motion, useInView } from "motion/react";
 import { api } from "../api/client";
 import {
   BaseDatePicker,
@@ -9,6 +10,11 @@ import {
   SegmentedTabs,
 } from "../components/BaseControls";
 import { Icon } from "../components/Icons";
+import {
+  MorphEditButton,
+  MotionTooltip,
+  TransactionRowsSkeleton,
+} from "../components/MotionPatterns";
 import { Badge, Drawer, Modal } from "../components/Shell";
 import { PageHeroCard } from "../components/Wallpapers";
 import type {
@@ -20,16 +26,19 @@ import type {
 } from "../types";
 import { fmtDate, fmtMoney, toNum } from "../utils/format";
 
+const PAGE_SIZE = 12;
+
 export function TransactionsView({
   transactions,
   accounts,
   categories,
   currency,
   wallpaperCss,
+  refreshKey = 0,
   externalSearch,
   onExternalSearchChange,
   onOpenAdd,
-  onOpenEdit,
+  onChanged,
   onDuplicate,
   onDelete,
   onImported,
@@ -39,10 +48,11 @@ export function TransactionsView({
   categories: Category[];
   currency: string;
   wallpaperCss?: string;
+  refreshKey?: number;
   externalSearch: string;
   onExternalSearchChange: (q: string) => void;
   onOpenAdd: () => void;
-  onOpenEdit: (t: Transaction) => void;
+  onChanged: (msg: string) => void;
   onDuplicate: (t: Transaction) => void;
   onDelete: (t: Transaction) => void;
   onImported: (msg: string) => void;
@@ -54,7 +64,23 @@ export function TransactionsView({
   const [confirmDel, setConfirmDel] = useState<Transaction | null>(null);
   const [csvOpen, setCsvOpen] = useState(false);
 
-  const filtered = useMemo(
+  // Infinite scroll state (react-infinite-loading)
+  const [rows, setRows] = useState<Transaction[]>(() => transactions.slice(0, PAGE_SIZE));
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(transactions.length);
+  const [totalIn, setTotalIn] = useState(() =>
+    transactions.filter((t) => t.type === "credit").reduce((s, t) => s + toNum(t.amount), 0)
+  );
+  const [totalOut, setTotalOut] = useState(() =>
+    transactions.filter((t) => t.type !== "credit").reduce((s, t) => s - toNum(t.amount), 0)
+  );
+  const [loadingInitial, setLoadingInitial] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const sentinelInView = useInView(sentinelRef, { margin: "160px" });
+
+  const localFallback = useMemo(
     () =>
       transactions.filter((t) => {
         if (externalSearch.trim()) {
@@ -75,12 +101,55 @@ export function TransactionsView({
     [transactions, externalSearch, type, acct, cat]
   );
 
-  const totalIn = filtered
-    .filter((t) => t.type === "credit")
-    .reduce((s, t) => s + toNum(t.amount), 0);
-  const totalOut = filtered
-    .filter((t) => t.type !== "credit")
-    .reduce((s, t) => s - toNum(t.amount), 0);
+  const fetchBatch = useCallback(
+    async (targetPage: number, reset: boolean) => {
+      if (reset) setLoadingInitial(true);
+      else setLoadingMore(true);
+
+      try {
+        const res = await api.listTransactions({
+          q: externalSearch.trim() || undefined,
+          type,
+          account_id: acct,
+          category_id: cat,
+          page: targetPage,
+          limit: PAGE_SIZE,
+        });
+        setRows((prev) => {
+          if (reset) return res.transactions;
+          const seen = new Set(prev.map((p) => p.id));
+          return [...prev, ...res.transactions.filter((t) => !seen.has(t.id))];
+        });
+        setPage(targetPage);
+        setTotalCount(res.total);
+        setTotalIn(toNum(res.total_in));
+        setTotalOut(toNum(res.total_out));
+      } catch {
+        const sliceEnd = targetPage * PAGE_SIZE;
+        setRows(localFallback.slice(0, sliceEnd));
+        setPage(targetPage);
+        setTotalCount(localFallback.length);
+      } finally {
+        setLoadingInitial(false);
+        setLoadingMore(false);
+      }
+    },
+    [externalSearch, type, acct, cat, localFallback]
+  );
+
+  // Reset to page 1 on filter or workspace changes
+  useEffect(() => {
+    fetchBatch(1, true);
+  }, [externalSearch, type, acct, cat, refreshKey, fetchBatch]);
+
+  const hasMore = rows.length < totalCount;
+
+  // Trigger next page when sentinel scrolls into view
+  useEffect(() => {
+    if (sentinelInView && hasMore && !loadingInitial && !loadingMore) {
+      fetchBatch(page + 1, false);
+    }
+  }, [sentinelInView, hasMore, loadingInitial, loadingMore, page, fetchBatch]);
 
   return (
     <div className="page">
@@ -89,7 +158,7 @@ export function TransactionsView({
         title="Transactions"
         subtitle={
           <>
-            {filtered.length} of {transactions.length} transactions ·{" "}
+            Showing {rows.length} of {totalCount} transactions ·{" "}
             <span className="num" style={{ fontWeight: 700, color: "var(--pos)" }}>
               {fmtMoney(totalIn, { cents: false, currency })}
             </span>{" "}
@@ -178,46 +247,91 @@ export function TransactionsView({
                 <th>Category</th>
                 <th>Description</th>
                 <th className="right">Amount</th>
-                <th style={{ width: 120 }} />
+                <th style={{ width: 125 }} />
               </tr>
             </thead>
             <tbody>
-              {filtered.map((t) => {
-                const pos = toNum(t.signed_amount) >= 0;
-                return (
-                  <tr key={t.id} onClick={() => setDetail(t)}>
-                    <td className="cell-muted num" style={{ whiteSpace: "nowrap" }}>
-                      {fmtDate(t.transaction_date)}
-                    </td>
-                    <td className="cell-muted">{t.account_name}</td>
-                    <td>
-                      <Badge label={t.category_name} color={t.category_color} />
-                    </td>
-                    <td className="cell-strong">{t.description}</td>
-                    <td className={"right num " + (pos ? "amt-pos" : "amt-neg")}>
-                      {fmtMoney(t.signed_amount, { sign: true, currency })}
-                    </td>
-                    <td className="right">
-                      <span className="row-act" onClick={(e) => e.stopPropagation()}>
-                        <button className="mini-btn" title="Edit" onClick={() => onOpenEdit(t)}>
-                          <Icon name="edit" />
-                        </button>
-                        <button className="mini-btn" title="Duplicate" onClick={() => onDuplicate(t)}>
-                          <Icon name="copy" />
-                        </button>
-                        <button
-                          className="mini-btn danger"
-                          title="Delete"
-                          onClick={() => setConfirmDel(t)}
-                        >
-                          <Icon name="trash" />
-                        </button>
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
+              {loadingInitial ? (
+                <TransactionRowsSkeleton rows={6} />
+              ) : (
+                rows.map((t, idx) => {
+                  const pos = toNum(t.signed_amount) >= 0;
+                  return (
+                    <motion.tr
+                      key={t.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: 0.16,
+                        delay: Math.min(0.18, (idx % PAGE_SIZE) * 0.018),
+                      }}
+                      onClick={() => setDetail(t)}
+                    >
+                      <td className="cell-muted num" style={{ whiteSpace: "nowrap" }}>
+                        {fmtDate(t.transaction_date)}
+                      </td>
+                      <td className="cell-muted">{t.account_name}</td>
+                      <td>
+                        <Badge label={t.category_name} color={t.category_color} />
+                      </td>
+                      <td className="cell-strong">{t.description}</td>
+                      <td className={"right num " + (pos ? "amt-pos" : "amt-neg")}>
+                        {fmtMoney(t.signed_amount, { sign: true, currency })}
+                      </td>
+                      <td className="right">
+                        <span className="row-act" onClick={(e) => e.stopPropagation()}>
+                          <MorphEditButton
+                            morphId={`tx-${t.id}`}
+                            title="Edit transaction"
+                            tooltip="Edit transaction"
+                            width={520}
+                          >
+                            {(close) => (
+                              <TransactionEditorBody
+                                accounts={accounts}
+                                categories={categories}
+                                currency={currency}
+                                initial={t}
+                                onCancel={close}
+                                onSaved={(msg) => {
+                                  close();
+                                  onChanged(msg);
+                                }}
+                              />
+                            )}
+                          </MorphEditButton>
+
+                          <MotionTooltip content="Duplicate transaction">
+                            <button
+                              type="button"
+                              className="mini-btn"
+                              onClick={() => onDuplicate(t)}
+                              aria-label="Duplicate transaction"
+                            >
+                              <Icon name="copy" />
+                            </button>
+                          </MotionTooltip>
+
+                          <MotionTooltip content="Delete transaction">
+                            <button
+                              type="button"
+                              className="mini-btn danger"
+                              onClick={() => setConfirmDel(t)}
+                              aria-label="Delete transaction"
+                            >
+                              <Icon name="trash" />
+                            </button>
+                          </MotionTooltip>
+                        </span>
+                      </td>
+                    </motion.tr>
+                  );
+                })
+              )}
+
+              {loadingMore && <TransactionRowsSkeleton rows={3} />}
+
+              {!loadingInitial && rows.length === 0 && (
                 <tr>
                   <td colSpan={6} style={{ textAlign: "center", padding: 42, color: "var(--ink-3)" }}>
                     No transactions match your filters.
@@ -227,6 +341,16 @@ export function TransactionsView({
             </tbody>
           </table>
         </div>
+
+        <div ref={sentinelRef} className="mp-infinite-sentinel">
+          {loadingMore
+            ? "Loading more transactions…"
+            : hasMore
+            ? `Scroll to load more (${rows.length} of ${totalCount})`
+            : rows.length > 0
+            ? `All ${totalCount} transactions loaded`
+            : ""}
+        </div>
       </div>
 
       {detail && (
@@ -235,17 +359,28 @@ export function TransactionsView({
           onClose={() => setDetail(null)}
           footer={
             <>
-              <button
-                className="btn btn--ghost"
-                style={{ flex: 1 }}
-                onClick={() => {
-                  const target = detail;
-                  setDetail(null);
-                  onOpenEdit(target);
-                }}
+              <MorphEditButton
+                morphId={`tx-drawer-${detail.id}`}
+                title="Edit transaction"
+                tooltip="Edit transaction"
+                buttonLabel="Edit"
+                width={520}
               >
-                <Icon name="edit" /> Edit
-              </button>
+                {(close) => (
+                  <TransactionEditorBody
+                    accounts={accounts}
+                    categories={categories}
+                    currency={currency}
+                    initial={detail}
+                    onCancel={close}
+                    onSaved={(msg) => {
+                      close();
+                      setDetail(null);
+                      onChanged(msg);
+                    }}
+                  />
+                )}
+              </MorphEditButton>
               <button
                 className="btn btn--subtle"
                 style={{ flex: 1 }}
@@ -357,19 +492,19 @@ export function TransactionsView({
   );
 }
 
-export function TransactionFormModal({
+function TransactionEditorBody({
   accounts,
   categories,
   currency = "USD",
   initial,
-  onClose,
+  onCancel,
   onSaved,
 }: {
   accounts: Account[];
   categories: Category[];
   currency?: string;
   initial?: Transaction | null;
-  onClose: () => void;
+  onCancel: () => void;
   onSaved: (msg: string) => void;
 }) {
   const [txType, setTxType] = useState<TxType>(initial?.type || "debit");
@@ -429,89 +564,119 @@ export function TransactionFormModal({
   };
 
   return (
-    <Modal
-      title={initial ? "Edit transaction" : "Add transaction"}
-      onClose={onClose}
-      footer={
-        <>
-          <button className="btn btn--ghost" onClick={onClose}>
-            Cancel
-          </button>
-          <button className="btn btn--primary" onClick={handleSubmit} disabled={busy}>
-            <Icon name="check" /> {initial ? "Update" : "Save transaction"}
-          </button>
-        </>
-      }
-    >
-      {err && <div className="error-banner">{err}</div>}
-      <SegmentedTabs
-        value={txType}
-        onValueChange={setTxType}
-        items={[
-          { value: "debit", label: "Expense" },
-          { value: "credit", label: "Income" },
-          { value: "transfer", label: "Transfer" },
-        ]}
-        layoutId="tx-form-type-seg"
-        style={{ marginBottom: 16 }}
-      />
+    <>
+      <div className="mp-morph-panel__body">
+        {err && <div className="error-banner">{err}</div>}
+        <SegmentedTabs
+          value={txType}
+          onValueChange={setTxType}
+          items={[
+            { value: "debit", label: "Expense" },
+            { value: "credit", label: "Income" },
+            { value: "transfer", label: "Transfer" },
+          ]}
+          layoutId={`tx-editor-seg-${initial?.id || "new"}`}
+          style={{ marginBottom: 16 }}
+        />
 
-      <div className="field" style={{ marginBottom: 14 }}>
-        <label>Amount</label>
-        <CurrencyInput value={amount} onValueChange={setAmount} currency={currency} />
-      </div>
-
-      <div className="field" style={{ marginBottom: 14 }}>
-        <label>Description</label>
-        <div style={{ display: "flex", gap: 8 }}>
-          <BaseInput
-            placeholder="e.g. Weekly groceries — FreshMart"
-            value={desc}
-            onChange={(e) => setDesc(e.target.value)}
-            onBlur={handleAutoSuggest}
-          />
-          <button
-            type="button"
-            className="btn btn--subtle btn--sm"
-            style={{ height: 46 }}
-            onClick={handleAutoSuggest}
-            title="Auto-categorize using TF-IDF"
-          >
-            <Icon name="sparkles" /> Auto-tag
-          </button>
+        <div className="field" style={{ marginBottom: 14 }}>
+          <label>Amount</label>
+          <CurrencyInput value={amount} onValueChange={setAmount} currency={currency} />
         </div>
-      </div>
 
-      <div className="grid2" style={{ marginBottom: 14 }}>
+        <div className="field" style={{ marginBottom: 14 }}>
+          <label>Description</label>
+          <div style={{ display: "flex", gap: 8 }}>
+            <BaseInput
+              placeholder="e.g. Weekly groceries — FreshMart"
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+              onBlur={handleAutoSuggest}
+            />
+            <MotionTooltip content="Auto-categorize using TF-IDF">
+              <button
+                type="button"
+                className="btn btn--subtle btn--sm"
+                style={{ height: 46 }}
+                onClick={handleAutoSuggest}
+              >
+                <Icon name="sparkles" /> Auto-tag
+              </button>
+            </MotionTooltip>
+          </div>
+        </div>
+
+        <div className="grid2" style={{ marginBottom: 14 }}>
+          <div className="field">
+            <label>Account</label>
+            <BaseSelect
+              value={accountId}
+              onValueChange={setAccountId}
+              options={accounts.map((a) => ({
+                value: a.id,
+                label: a.name,
+                sublabel: a.account_type,
+              }))}
+            />
+          </div>
+          <div className="field">
+            <label>Category</label>
+            <BaseSelect
+              value={categoryId}
+              onValueChange={setCategoryId}
+              options={categories.map((c) => ({
+                value: c.id,
+                label: c.name,
+                sublabel: c.type,
+              }))}
+            />
+          </div>
+        </div>
+
         <div className="field">
-          <label>Account</label>
-          <BaseSelect
-            value={accountId}
-            onValueChange={setAccountId}
-            options={accounts.map((a) => ({
-              value: a.id,
-              label: a.name,
-              sublabel: a.account_type,
-            }))}
-          />
-        </div>
-        <div className="field">
-          <label>Category</label>
-          <BaseSelect
-            value={categoryId}
-            onValueChange={setCategoryId}
-            options={categories.map((c) => ({
-              value: c.id,
-              label: c.name,
-              sublabel: c.type,
-            }))}
-          />
+          <label>Date</label>
+          <BaseDatePicker value={txDate} onChange={setTxDate} ariaLabel="Transaction date" />
         </div>
       </div>
 
-      <div className="field">
-        <label>Date</label>
-        <BaseDatePicker value={txDate} onChange={setTxDate} ariaLabel="Transaction date" />
+      <div className="mp-morph-panel__foot">
+        <button type="button" className="btn btn--ghost" onClick={onCancel}>
+          Cancel
+        </button>
+        <button type="button" className="btn btn--primary" onClick={handleSubmit} disabled={busy}>
+          <Icon name="check" /> {initial ? "Update" : "Save transaction"}
+        </button>
+      </div>
+    </>
+  );
+}
+
+export function TransactionFormModal({
+  accounts,
+  categories,
+  currency = "USD",
+  initial,
+  onClose,
+  onSaved,
+}: {
+  accounts: Account[];
+  categories: Category[];
+  currency?: string;
+  initial?: Transaction | null;
+  onClose: () => void;
+  onSaved: (msg: string) => void;
+}) {
+  return (
+    <Modal title={initial ? "Edit transaction" : "Add transaction"} onClose={onClose}>
+      <div style={{ margin: "-24px" }}>
+        <TransactionEditorBody
+          accounts={accounts}
+          categories={categories}
+          currency={currency}
+          initial={initial}
+          onCancel={onClose}
+          onSaved={onSaved}
+        />
       </div>
     </Modal>
   );

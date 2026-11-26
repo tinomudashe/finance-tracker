@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { DonutChart, LineChart, resolveBlueBlackColor } from "../components/Charts";
 import { Icon } from "../components/Icons";
-import { Modal } from "../components/Shell";
+import {
+  CardDragHandle,
+  ExpandableCardSheet,
+  MotionTooltip,
+  usePersistedCardOrder,
+} from "../components/MotionPatterns";
 import { PageHeroCard } from "../components/Wallpapers";
 import type { Account, DashboardSummary, Preferences, RouteId, Transaction, User } from "../types";
 import { LABELS, fmtDate, fmtMoney, toNum } from "../utils/format";
@@ -30,44 +35,67 @@ export function DashboardView({
   const t = LABELS[lang] || LABELS.en;
   const firstName = (user.full_name || user.email).split(" ")[0];
 
-  const stats = [
-    {
-      id: "networth",
-      label: "Net Worth",
-      val: fmtMoney(summary.net_worth, { cents: false, currency }),
-      delta: `${summary.net_worth_delta_pct >= 0 ? "+" : ""}${summary.net_worth_delta_pct}% this month`,
-      up: summary.net_worth_delta_pct >= 0,
-      icon: "wallet",
-      variant: "stat__ic--blue",
-    },
-    {
-      id: "income",
-      label: "Monthly Income",
-      val: fmtMoney(summary.month_income, { cents: false, currency }),
-      delta: `${summary.income_delta_pct >= 0 ? "+" : ""}${summary.income_delta_pct}% vs last month`,
-      up: summary.income_delta_pct >= 0,
-      icon: "trendUp",
-      variant: "stat__ic--blue",
-    },
-    {
-      id: "expense",
-      label: "Monthly Expenses",
-      val: fmtMoney(summary.month_expense, { cents: false, currency }),
-      delta: `${summary.expense_delta_pct >= 0 ? "+" : ""}${summary.expense_delta_pct}% vs last month`,
-      up: summary.expense_delta_pct <= 0,
-      down: summary.expense_delta_pct > 0,
-      icon: "trendDown",
-      variant: "stat__ic--black",
-    },
-    {
-      id: "savings",
-      label: "Savings Rate",
-      val: `${summary.savings_rate}%`,
-      icon: "percent",
-      variant: "stat__ic",
-      progress: summary.savings_rate,
-    },
-  ];
+  const baseStats = useMemo(
+    () => [
+      {
+        id: "networth",
+        label: "Net Worth",
+        val: fmtMoney(summary.net_worth, { cents: false, currency }),
+        delta: `${summary.net_worth_delta_pct >= 0 ? "+" : ""}${summary.net_worth_delta_pct}% this month`,
+        up: summary.net_worth_delta_pct >= 0,
+        down: summary.net_worth_delta_pct < 0,
+        icon: "wallet",
+        variant: "stat__ic--blue",
+        progress: undefined as number | undefined,
+      },
+      {
+        id: "income",
+        label: "Monthly Income",
+        val: fmtMoney(summary.month_income, { cents: false, currency }),
+        delta: `${summary.income_delta_pct >= 0 ? "+" : ""}${summary.income_delta_pct}% vs last month`,
+        up: summary.income_delta_pct >= 0,
+        down: summary.income_delta_pct < 0,
+        icon: "trendUp",
+        variant: "stat__ic--blue",
+        progress: undefined as number | undefined,
+      },
+      {
+        id: "expense",
+        label: "Monthly Expenses",
+        val: fmtMoney(summary.month_expense, { cents: false, currency }),
+        delta: `${summary.expense_delta_pct >= 0 ? "+" : ""}${summary.expense_delta_pct}% vs last month`,
+        up: summary.expense_delta_pct <= 0,
+        down: summary.expense_delta_pct > 0,
+        icon: "trendDown",
+        variant: "stat__ic--black",
+        progress: undefined as number | undefined,
+      },
+      {
+        id: "savings",
+        label: "Savings Rate",
+        val: `${summary.savings_rate}%`,
+        delta: undefined as string | undefined,
+        up: true,
+        down: false,
+        icon: "percent",
+        variant: "stat__ic",
+        progress: summary.savings_rate,
+      },
+    ],
+    [summary, currency]
+  );
+
+  const {
+    orderedItems: stats,
+    draggingId,
+    setDraggingId,
+    swapIds,
+    shuffleOrder,
+    resetOrder,
+    hasCustomOrder,
+  } = usePersistedCardOrder("ft_order_kpis", baseStats);
+
+  const selectedStat = stats.find((s) => s.id === statModal) || null;
 
   return (
     <div className="page">
@@ -76,6 +104,20 @@ export function DashboardView({
         title={`${t.welcomeBack}, ${firstName}`}
         subtitle={summary.reference_month}
         wallpaperCss={wallpaperCss}
+        rightSlot={
+          <div style={{ display: "flex", gap: 6 }}>
+            <MotionTooltip content="Shuffle KPI card order">
+              <button type="button" className="btn btn--ghost btn--sm" onClick={shuffleOrder}>
+                <Icon name="shuffle" /> Shuffle
+              </button>
+            </MotionTooltip>
+            {hasCustomOrder && (
+              <button type="button" className="btn btn--subtle btn--sm" onClick={resetOrder}>
+                Reset
+              </button>
+            )}
+          </div>
+        }
       >
         <button className="btn btn--primary" onClick={openAddTx}>
           <Icon name="plus" /> {t.addTransaction}
@@ -83,41 +125,64 @@ export function DashboardView({
       </PageHeroCard>
 
       <div className="stat-grid">
-        {stats.map((s, idx) => (
-          <motion.div
-            className="stat"
-            key={s.id}
-            onClick={() => setStatModal(s.id)}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -2 }}
-            transition={{ duration: 0.2, delay: idx * 0.035, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div className="stat__top">
-              <span className="stat__label">{s.label}</span>
-              <span className={`stat__ic ${s.variant}`}>
-                <Icon name={s.icon} />
-              </span>
-            </div>
-            <div className="stat__val num">{s.val}</div>
-            {s.delta && (
-              <div className={"stat__delta " + (s.down ? "down" : "up")}>
-                <Icon name={s.up ? "trendUp" : "trendDown"} />
-                {s.delta}
+        {stats.map((s) => {
+          const cardLayoutId = `appstore-kpi-${s.id}`;
+          return (
+            <motion.div
+              key={s.id}
+              layout
+              layoutId={cardLayoutId}
+              transition={{ type: "spring", stiffness: 410, damping: 33 }}
+              className={"stat" + (draggingId === s.id ? " mp-card-dragging" : "")}
+              onClick={() => setStatModal(s.id)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (draggingId && draggingId !== s.id) {
+                  swapIds(draggingId, s.id);
+                }
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDraggingId(null);
+              }}
+            >
+              <div className="stat__top">
+                <motion.span layoutId={`${cardLayoutId}-title`} className="stat__label">
+                  {s.label}
+                </motion.span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <span className={`stat__ic ${s.variant}`}>
+                    <Icon name={s.icon} />
+                  </span>
+                  <CardDragHandle
+                    id={s.id}
+                    onStartDrag={setDraggingId}
+                    onEndDrag={() => setDraggingId(null)}
+                  />
+                </span>
               </div>
-            )}
-            {s.progress != null && (
-              <div className="bar" style={{ marginTop: 12 }}>
-                <motion.i
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min(100, s.progress)}%` }}
-                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                  style={{ background: "var(--blue-600)" }}
-                />
-              </div>
-            )}
-          </motion.div>
-        ))}
+              <motion.div layoutId={`${cardLayoutId}-val`} className="stat__val num">
+                {s.val}
+              </motion.div>
+              {s.delta && (
+                <div className={"stat__delta " + (s.down ? "down" : "up")}>
+                  <Icon name={s.up ? "trendUp" : "trendDown"} />
+                  {s.delta}
+                </div>
+              )}
+              {s.progress != null && (
+                <div className="bar" style={{ marginTop: 12 }}>
+                  <motion.i
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(100, s.progress)}%` }}
+                    transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                    style={{ background: "var(--blue-600)" }}
+                  />
+                </div>
+              )}
+            </motion.div>
+          );
+        })}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 18, marginTop: 18 }}>
@@ -271,38 +336,48 @@ export function DashboardView({
         </div>
       </div>
 
-      {statModal && (
-        <StatDetailModal
-          id={statModal}
-          summary={summary}
-          accounts={accounts}
-          transactions={allTransactions}
-          currency={currency}
-          onClose={() => setStatModal(null)}
-        />
-      )}
+      <ExpandableCardSheet
+        open={Boolean(selectedStat)}
+        cardLayoutId={selectedStat ? `appstore-kpi-${selectedStat.id}` : "appstore-kpi-none"}
+        subtitle={summary.reference_month}
+        title={
+          selectedStat?.id === "networth"
+            ? "Net worth breakdown"
+            : selectedStat?.label || ""
+        }
+        headlineValue={selectedStat?.val}
+        onClose={() => setStatModal(null)}
+      >
+        {selectedStat && (
+          <StatSheetBody
+            id={selectedStat.id}
+            summary={summary}
+            accounts={accounts}
+            transactions={allTransactions}
+            currency={currency}
+          />
+        )}
+      </ExpandableCardSheet>
     </div>
   );
 }
 
-function StatDetailModal({
+function StatSheetBody({
   id,
   summary,
   accounts,
   transactions,
   currency,
-  onClose,
 }: {
   id: string;
   summary: DashboardSummary;
   accounts: Account[];
   transactions: Transaction[];
   currency: string;
-  onClose: () => void;
 }) {
   if (id === "networth") {
     return (
-      <Modal title="Net worth breakdown" onClose={onClose} width={580}>
+      <>
         <div className="grid2" style={{ marginBottom: 18 }}>
           <div className="callout-tile callout-tile--blue">
             <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>
@@ -345,21 +420,18 @@ function StatDetailModal({
             </span>
           </div>
         ))}
-      </Modal>
+      </>
     );
   }
 
   if (id === "savings") {
     const saved = toNum(summary.month_income) - toNum(summary.month_expense);
     return (
-      <Modal title="Savings rate" onClose={onClose} width={500}>
-        <div style={{ textAlign: "center", marginBottom: 18 }}>
-          <div className="num" style={{ fontSize: 48, fontWeight: 700, color: "var(--blue-600)" }}>
-            {summary.savings_rate}%
-          </div>
-          <div className="muted">of monthly income saved ({fmtMoney(saved, { currency })})</div>
+      <div style={{ textAlign: "center", padding: "12px 0" }}>
+        <div className="muted" style={{ fontSize: 14 }}>
+          Net monthly savings: <b className="num" style={{ color: "var(--ink)" }}>{fmtMoney(saved, { currency })}</b>
         </div>
-      </Modal>
+      </div>
     );
   }
 
@@ -369,26 +441,24 @@ function StatDetailModal({
       : transactions.filter((t) => t.type === "debit");
 
   return (
-    <Modal title={id === "income" ? "Income transactions" : "Expense transactions"} onClose={onClose}>
-      <div style={{ maxHeight: 360, overflowY: "auto" }}>
-        {list.slice(0, 25).map((tx) => (
-          <div
-            key={tx.id}
-            className="between"
-            style={{ padding: "10px 0", borderBottom: "1px solid var(--line)" }}
-          >
-            <div>
-              <div className="cell-strong">{tx.description}</div>
-              <div className="muted" style={{ fontSize: 12 }}>
-                {fmtDate(tx.transaction_date)} · {tx.category_name}
-              </div>
+    <div style={{ maxHeight: 340, overflowY: "auto" }}>
+      {list.slice(0, 25).map((tx) => (
+        <div
+          key={tx.id}
+          className="between"
+          style={{ padding: "10px 0", borderBottom: "1px solid var(--line)" }}
+        >
+          <div>
+            <div className="cell-strong">{tx.description}</div>
+            <div className="muted" style={{ fontSize: 12 }}>
+              {fmtDate(tx.transaction_date)} · {tx.category_name}
             </div>
-            <span className={(toNum(tx.signed_amount) >= 0 ? "amt-pos" : "amt-neg") + " num"}>
-              {fmtMoney(tx.signed_amount, { sign: true, currency })}
-            </span>
           </div>
-        ))}
-      </div>
-    </Modal>
+          <span className={(toNum(tx.signed_amount) >= 0 ? "amt-pos" : "amt-neg") + " num"}>
+            {fmtMoney(tx.signed_amount, { sign: true, currency })}
+          </span>
+        </div>
+      ))}
+    </div>
   );
 }

@@ -56,6 +56,9 @@ export const FLATICON_CLASSES: Record<string, string> = {
   eyeOff: "fi-rr-eye-crossed",
   csv: "fi-rr-file-spreadsheet",
   sparkles: "fi-rr-sparkles",
+  grip: "fi-rr-apps-sort",
+  layers: "fi-rr-apps",
+  refresh: "fi-rr-arrows-repeat",
 };
 
 export const CATEGORY_ICON_OPTIONS: { id: string; label: string }[] = [

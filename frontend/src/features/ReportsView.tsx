@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { AnimatePresence } from "motion/react";
 import { api } from "../api/client";
 import { BaseDatePicker, SegmentedTabs } from "../components/BaseControls";
 import { BarChart, resolveBlueBlackColor } from "../components/Charts";
 import { Icon } from "../components/Icons";
+import { ReportsSkeleton } from "../components/MotionPatterns";
 import { PageHeroCard } from "../components/Wallpapers";
 import type { ReportAnalyticsSummary, ReportRecord } from "../types";
 import { fmtMoney, toNum } from "../utils/format";
@@ -20,14 +22,20 @@ export function ReportsView({
   const [fromDate, setFromDate] = useState("2026-03-01");
   const [toDate, setToDate] = useState("2026-05-31");
   const [analytics, setAnalytics] = useState<ReportAnalyticsSummary | null>(null);
+  const [loading, setLoading] = useState(true);
   const [pdfReports, setPdfReports] = useState<ReportRecord[]>([]);
 
   const loadPeriod = async (p: "1m" | "3m" | "6m" | "1y") => {
     setPeriod(p);
-    const data = await api.getReportAnalytics({ period: p });
-    setAnalytics(data);
-    setFromDate(data.start_date);
-    setToDate(data.end_date);
+    setLoading(true);
+    try {
+      const data = await api.getReportAnalytics({ period: p });
+      setAnalytics(data);
+      setFromDate(data.start_date);
+      setToDate(data.end_date);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -128,9 +136,13 @@ export function ReportsView({
         </div>
       </div>
 
-      {analytics && (
-        <>
-          <div className="stat-grid" style={{ marginBottom: 18 }}>
+      <AnimatePresence mode="wait">
+        {loading ? (
+          <ReportsSkeleton key="reports-skeleton" />
+        ) : (
+          analytics && (
+            <div key="reports-content">
+              <div className="stat-grid" style={{ marginBottom: 18 }}>
             <div className="stat" style={{ cursor: "default" }}>
               <div className="stat__label" style={{ marginBottom: 10 }}>
                 Total Income
@@ -215,9 +227,11 @@ export function ReportsView({
                 })}
               </div>
             </div>
-          </div>
-        </>
-      )}
+              </div>
+            </div>
+          )
+        )}
+      </AnimatePresence>
 
       {pdfReports.length > 0 && (
         <div className="card card--pad" style={{ marginTop: 18 }}>

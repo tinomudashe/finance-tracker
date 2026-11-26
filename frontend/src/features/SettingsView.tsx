@@ -3,6 +3,11 @@ import { api } from "../api/client";
 import { AvatarPicker, UserAvatar } from "../components/Avatar";
 import { BaseInput, BaseSelect, SegmentedTabs } from "../components/BaseControls";
 import { BLUE_BLACK_SWATCHES, CATEGORY_ICON_OPTIONS, Icon } from "../components/Icons";
+import {
+  AnimatedNotificationsList,
+  MorphEditButton,
+  MotionTooltip,
+} from "../components/MotionPatterns";
 import { Drawer, Modal } from "../components/Shell";
 import { PageHeroCard, resolveWallpaperCss, WallpaperPicker } from "../components/Wallpapers";
 import type { Category, CategoryType, FontPreset, NotificationItem, Preferences, User } from "../types";
@@ -48,7 +53,7 @@ export function SettingsView({
     user.preferences?.custom_wallpaper_url || ""
   );
 
-  const [catModal, setCatModal] = useState<Category | "new" | null>(null);
+  const [creatingCat, setCreatingCat] = useState(false);
 
   const buildPreferences = (overrides?: Partial<Preferences>): Preferences => ({
     theme,
@@ -184,7 +189,7 @@ export function SettingsView({
         <div className="card card--pad">
           <div className="card-head">
             <div className="card-title">Categories ({categories.length})</div>
-            <button className="btn btn--primary btn--sm" onClick={() => setCatModal("new")}>
+            <button className="btn btn--primary btn--sm" onClick={() => setCreatingCat(true)}>
               <Icon name="plus" /> New category
             </button>
           </div>
@@ -219,12 +224,34 @@ export function SettingsView({
                   </span>
                 </span>
                 <span className="row-act">
-                  <button className="mini-btn" title="Edit" onClick={() => setCatModal(c)}>
-                    <Icon name="edit" />
-                  </button>
-                  <button className="mini-btn danger" title="Delete" onClick={() => deleteCat(c)}>
-                    <Icon name="trash" />
-                  </button>
+                  <MorphEditButton
+                    morphId={`cat-${c.id}`}
+                    title="Edit Category"
+                    tooltip="Edit category"
+                  >
+                    {(close) => (
+                      <CategoryEditorBody
+                        initial={c}
+                        categories={categories}
+                        onCancel={close}
+                        onSaved={(msg) => {
+                          close();
+                          onCategoriesChanged(msg);
+                        }}
+                      />
+                    )}
+                  </MorphEditButton>
+
+                  <MotionTooltip content="Delete category">
+                    <button
+                      type="button"
+                      className="mini-btn danger"
+                      onClick={() => deleteCat(c)}
+                      aria-label="Delete category"
+                    >
+                      <Icon name="trash" />
+                    </button>
+                  </MotionTooltip>
                 </span>
               </div>
             ))}
@@ -347,23 +374,27 @@ export function SettingsView({
 
       {tab === "notifications" && (
         <div className="card card--pad">
-          <div className="card-title" style={{ marginBottom: 16 }}>
+          <div className="card-title" style={{ marginBottom: 14 }}>
             Recent notifications
           </div>
-          <NotificationList notifications={notifications} />
+          <AnimatedNotificationsList notifications={notifications} />
         </div>
       )}
 
-      {catModal && (
-        <CategoryFormModal
-          initial={catModal === "new" ? null : catModal}
-          categories={categories}
-          onClose={() => setCatModal(null)}
-          onSaved={(msg) => {
-            setCatModal(null);
-            onCategoriesChanged(msg);
-          }}
-        />
+      {creatingCat && (
+        <Modal title="New Category" onClose={() => setCreatingCat(false)}>
+          <div style={{ margin: "-24px" }}>
+            <CategoryEditorBody
+              initial={null}
+              categories={categories}
+              onCancel={() => setCreatingCat(false)}
+              onSaved={(msg) => {
+                setCreatingCat(false);
+                onCategoriesChanged(msg);
+              }}
+            />
+          </div>
+        </Modal>
       )}
     </div>
   );
@@ -378,78 +409,25 @@ export function NotificationsDrawer({
 }) {
   return (
     <Drawer title="Notifications" onClose={onClose}>
-      <NotificationList notifications={notifications} />
+      <AnimatedNotificationsList notifications={notifications} />
     </Drawer>
   );
 }
 
-function NotificationList({ notifications }: { notifications: NotificationItem[] }) {
-  const tone: Record<NotificationItem["kind"], [string, string]> = {
-    warn: ["stat__ic--black", "alert"],
-    pos: ["stat__ic--blue", "checkCircle"],
-    info: ["stat__ic--blue", "bell"],
-  };
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      {notifications.map((n) => {
-        const [variant, ic] = tone[n.kind];
-        return (
-          <div
-            key={n.id}
-            style={{
-              display: "flex",
-              gap: 13,
-              padding: "14px 16px",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--r-md)",
-              background: "var(--surface-2)",
-            }}
-          >
-            <span
-              className={"bare-icon " + (variant === "stat__ic--blue" ? "bare-icon--blue" : "")}
-              style={{ fontSize: 21 }}
-            >
-              <Icon name={ic} />
-            </span>
-            <div style={{ flex: 1 }}>
-              <div className="between">
-                <span className="cell-strong" style={{ fontSize: 14 }}>
-                  {n.title}
-                </span>
-                <span className="muted num" style={{ fontSize: 12 }}>
-                  {n.time}
-                </span>
-              </div>
-              <div className="muted" style={{ fontSize: 13, marginTop: 2 }}>
-                {n.body}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-      {notifications.length === 0 && (
-        <div className="muted" style={{ fontSize: 13 }}>
-          No active alerts.
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CategoryFormModal({
+function CategoryEditorBody({
   initial,
   categories,
-  onClose,
+  onCancel,
   onSaved,
 }: {
   initial: Category | null;
   categories: Category[];
-  onClose: () => void;
+  onCancel: () => void;
   onSaved: (msg: string) => void;
 }) {
   const [name, setName] = useState(initial?.name || "");
   const [type, setType] = useState<CategoryType>(initial?.type || "expense");
-  const [color, setColor] = useState(initial?.color || "#0052ff");
+  const [color, setColor] = useState(initial?.color || "#0352ff");
   const [iconName, setIconName] = useState(initial?.icon || "tag");
   const [parentId, setParentId] = useState(initial?.parent_id || "");
   const [err, setErr] = useState<string | null>(null);
@@ -479,100 +457,97 @@ function CategoryFormModal({
   };
 
   return (
-    <Modal
-      title={initial ? "Edit Category" : "New Category"}
-      onClose={onClose}
-      footer={
-        <>
-          <button className="btn btn--ghost" onClick={onClose}>
-            Cancel
-          </button>
-          <button className="btn btn--primary" onClick={save}>
-            <Icon name="check" /> Save
-          </button>
-        </>
-      }
-    >
-      {err && <div className="error-banner">{err}</div>}
-      <div className="grid2" style={{ marginBottom: 14 }}>
-        <div className="field">
-          <label>Name</label>
-          <BaseInput value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
-        <div className="field">
-          <label>Type</label>
-          <BaseSelect
-            value={type}
-            onValueChange={(v) => setType(v as CategoryType)}
-            options={[
-              { value: "expense", label: "Expense" },
-              { value: "income", label: "Income" },
-              { value: "transfer", label: "Transfer" },
-            ]}
-          />
-        </div>
-      </div>
-
-      <div className="field" style={{ marginBottom: 14 }}>
-        <label>Blue & Black Shade</label>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>
-          {BLUE_BLACK_SWATCHES.map((s) => (
-            <button
-              key={s.hex}
-              type="button"
-              title={s.label}
-              onClick={() => setColor(s.hex)}
-              style={{
-                height: 32,
-                borderRadius: "var(--r-xs)",
-                background: s.hex,
-                border: color.toLowerCase() === s.hex ? "2px solid var(--ink)" : "1px solid var(--border-2)",
-                outline: color.toLowerCase() === s.hex ? "2px solid var(--blue)" : "none",
-              }}
+    <>
+      <div className="mp-morph-panel__body">
+        {err && <div className="error-banner">{err}</div>}
+        <div className="grid2" style={{ marginBottom: 14 }}>
+          <div className="field">
+            <label>Name</label>
+            <BaseInput value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="field">
+            <label>Type</label>
+            <BaseSelect
+              value={type}
+              onValueChange={(v) => setType(v as CategoryType)}
+              options={[
+                { value: "expense", label: "Expense" },
+                { value: "income", label: "Income" },
+                { value: "transfer", label: "Transfer" },
+              ]}
             />
-          ))}
+          </div>
         </div>
-      </div>
 
-      <div className="field" style={{ marginBottom: 14 }}>
-        <label>Flaticon Category Glyph</label>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>
-          {CATEGORY_ICON_OPTIONS.map((opt) => (
-            <button
-              key={opt.id}
-              type="button"
-              title={opt.label}
-              onClick={() => setIconName(opt.id)}
-              style={{
-                height: 36,
-                borderRadius: "var(--r-xs)",
-                border: iconName === opt.id ? "2px solid var(--blue)" : "1px solid var(--border)",
-                background: iconName === opt.id ? "var(--blue-600)" : "var(--surface-2)",
-                color: iconName === opt.id ? "#ffffff" : "var(--ink)",
-                display: "grid",
-                placeItems: "center",
-                fontSize: 15,
-              }}
-            >
-              <Icon name={opt.id} />
-            </button>
-          ))}
+        <div className="field" style={{ marginBottom: 14 }}>
+          <label>Blue & Black Shade</label>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>
+            {BLUE_BLACK_SWATCHES.map((s) => (
+              <button
+                key={s.hex}
+                type="button"
+                title={s.label}
+                onClick={() => setColor(s.hex)}
+                style={{
+                  height: 32,
+                  borderRadius: "var(--r-xs)",
+                  background: s.hex,
+                  border: color.toLowerCase() === s.hex ? "2px solid var(--ink)" : "1px solid var(--border-2)",
+                  outline: color.toLowerCase() === s.hex ? "2px solid var(--blue-600)" : "none",
+                }}
+              />
+            ))}
+          </div>
         </div>
-      </div>
 
-      {!initial && (
-        <div className="field">
-          <label>Parent Category (optional)</label>
-          <BaseSelect
-            value={parentId || "__none__"}
-            onValueChange={(v) => setParentId(v === "__none__" ? "" : v)}
-            options={[
-              { value: "__none__", label: "None (top-level)" },
-              ...categories.map((c) => ({ value: c.id, label: c.name })),
-            ]}
-          />
+        <div className="field" style={{ marginBottom: 14 }}>
+          <label>Flaticon Category Glyph</label>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>
+            {CATEGORY_ICON_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                title={opt.label}
+                onClick={() => setIconName(opt.id)}
+                style={{
+                  height: 36,
+                  borderRadius: "var(--r-xs)",
+                  border: iconName === opt.id ? "2px solid var(--blue-600)" : "1px solid var(--border)",
+                  background: iconName === opt.id ? "var(--blue-600)" : "var(--surface-2)",
+                  color: iconName === opt.id ? "#ffffff" : "var(--ink)",
+                  display: "grid",
+                  placeItems: "center",
+                  fontSize: 15,
+                }}
+              >
+                <Icon name={opt.id} />
+              </button>
+            ))}
+          </div>
         </div>
-      )}
-    </Modal>
+
+        {!initial && (
+          <div className="field">
+            <label>Parent Category (optional)</label>
+            <BaseSelect
+              value={parentId || "__none__"}
+              onValueChange={(v) => setParentId(v === "__none__" ? "" : v)}
+              options={[
+                { value: "__none__", label: "None (top-level)" },
+                ...categories.map((c) => ({ value: c.id, label: c.name })),
+              ]}
+            />
+          </div>
+        )}
+      </div>
+      <div className="mp-morph-panel__foot">
+        <button type="button" className="btn btn--ghost" onClick={onCancel}>
+          Cancel
+        </button>
+        <button type="button" className="btn btn--primary" onClick={save}>
+          <Icon name="check" /> Save
+        </button>
+      </div>
+    </>
   );
 }

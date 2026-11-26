@@ -6,6 +6,7 @@ import { LABELS } from "../utils/format";
 import { UserAvatar } from "./Avatar";
 import { LanguageDropdown } from "./BaseControls";
 import { Icon } from "./Icons";
+import { MotionTooltip } from "./MotionPatterns";
 
 export function HeaderBar({
   user,
@@ -31,14 +32,11 @@ export function HeaderBar({
   const lang = user.preferences?.language || "en";
   return (
     <header className="sf-global">
-      <button
-        type="button"
-        className="brand-logo-btn"
-        title="FinanceTrace Home"
-        onClick={onGoHome}
-      >
-        <img src="/logo.svg" alt="FinanceTrace" className="brand-logo-img" />
-      </button>
+      <MotionTooltip content="Dashboard Home" side="bottom">
+        <button type="button" className="brand-logo-btn" onClick={onGoHome} aria-label="Dashboard Home">
+          <img src="/logo.svg" alt="FinanceTrace" className="brand-logo-img" />
+        </button>
+      </MotionTooltip>
 
       <div className="sf-search">
         <input
@@ -61,25 +59,32 @@ export function HeaderBar({
       </div>
 
       <div className="sf-global__right">
-        <button className="icon-btn" title="Notifications" onClick={onBell}>
-          <Icon name="bell" />
-          {hasAlerts && <span className="dot" />}
-        </button>
+        <MotionTooltip content="Notifications" side="bottom">
+          <button className="icon-btn" onClick={onBell} aria-label="Notifications">
+            <Icon name="bell" />
+            {hasAlerts && <span className="dot" />}
+          </button>
+        </MotionTooltip>
 
         <LanguageDropdown language={lang} onSelectLanguage={onSelectLanguage} />
 
-        <button className="icon-btn" title="Settings" onClick={onGoSettings}>
-          <Icon name="settings" />
-        </button>
-        <button className="icon-btn" title="Sign out" onClick={onLogout}>
-          <Icon name="logout" />
-        </button>
-        <UserAvatar
-          user={user}
-          size={42}
-          onClick={onGoSettings}
-          title={`${user.full_name || user.email} — Click to customize avatar`}
-        />
+        <MotionTooltip content="Workspace Settings" side="bottom">
+          <button className="icon-btn" onClick={onGoSettings} aria-label="Settings">
+            <Icon name="settings" />
+          </button>
+        </MotionTooltip>
+
+        <MotionTooltip content="Sign out" side="bottom">
+          <button className="icon-btn" onClick={onLogout} aria-label="Sign out">
+            <Icon name="logout" />
+          </button>
+        </MotionTooltip>
+
+        <MotionTooltip content={`${user.full_name || user.email} — Customize Avatar`} side="bottom">
+          <span>
+            <UserAvatar user={user} size={42} onClick={onGoSettings} />
+          </span>
+        </MotionTooltip>
       </div>
     </header>
   );

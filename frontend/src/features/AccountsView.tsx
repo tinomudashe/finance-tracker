@@ -3,6 +3,13 @@ import { motion } from "motion/react";
 import { api } from "../api/client";
 import { BaseInput, BaseSelect, CurrencyInput } from "../components/BaseControls";
 import { Icon } from "../components/Icons";
+import {
+  CardDragHandle,
+  ExpandableCardSheet,
+  MorphEditButton,
+  MotionTooltip,
+  usePersistedCardOrder,
+} from "../components/MotionPatterns";
 import { Modal } from "../components/Shell";
 import { PageHeroCard, PEXELS_WALLPAPERS } from "../components/Wallpapers";
 import type { Account, AccountType, Transaction } from "../types";
@@ -31,11 +38,22 @@ export function AccountsView({
   onChanged: (msg: string) => void;
   onError: (msg: string) => void;
 }) {
-  const [detail, setDetail] = useState<Account | null>(null);
-  const [editing, setEditing] = useState<Account | "new" | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const {
+    orderedItems,
+    draggingId,
+    setDraggingId,
+    swapIds,
+    shuffleOrder,
+    resetOrder,
+    hasCustomOrder,
+  } = usePersistedCardOrder("ft_order_accounts", accounts);
 
   const total = accounts.reduce((s, a) => s + toNum(a.current_balance), 0);
   const cardBg = wallpaperCss || PEXELS_WALLPAPERS[0].cssImage;
+  const detail = orderedItems.find((a) => a.id === detailId) || null;
 
   const handleDelete = async (a: Account) => {
     try {
@@ -60,25 +78,47 @@ export function AccountsView({
           </>
         }
         wallpaperCss={wallpaperCss}
+        rightSlot={
+          <div style={{ display: "flex", gap: 6 }}>
+            <MotionTooltip content="Shuffle account cards">
+              <button type="button" className="btn btn--ghost btn--sm" onClick={shuffleOrder}>
+                <Icon name="shuffle" /> Shuffle
+              </button>
+            </MotionTooltip>
+            {hasCustomOrder && (
+              <button type="button" className="btn btn--subtle btn--sm" onClick={resetOrder}>
+                Reset
+              </button>
+            )}
+          </div>
+        }
       >
-        <button className="btn btn--primary" onClick={() => setEditing("new")}>
+        <button className="btn btn--primary" onClick={() => setCreating(true)}>
           <Icon name="plus" /> Add Account
         </button>
       </PageHeroCard>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(310px, 1fr))", gap: 18 }}>
-        {accounts.map((a, idx) => {
+        {orderedItems.map((a) => {
           const neg = toNum(a.current_balance) < 0;
+          const cardLayoutId = `appstore-acct-${a.id}`;
           return (
             <motion.div
-              className="card card--pad"
               key={a.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2, delay: idx * 0.035, ease: [0.22, 1, 0.36, 1] }}
+              layout
+              layoutId={cardLayoutId}
+              transition={{ type: "spring", stiffness: 410, damping: 33 }}
+              className={"card card--pad" + (draggingId === a.id ? " mp-card-dragging" : "")}
               style={{ cursor: "pointer", display: "flex", flexDirection: "column" }}
-              onClick={() => setDetail(a)}
+              onClick={() => setDetailId(a.id)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (draggingId && draggingId !== a.id) swapIds(draggingId, a.id);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDraggingId(null);
+              }}
             >
               <div className="acct-wallpaper" style={{ backgroundImage: cardBg }}>
                 <span
@@ -88,19 +128,51 @@ export function AccountsView({
                   <Icon name={KIND_ICON[a.account_type] || "wallet"} /> {a.account_type}
                 </span>
                 <span className="row-act" onClick={(e) => e.stopPropagation()}>
-                  <button className="mini-btn" title="Edit" onClick={() => setEditing(a)}>
-                    <Icon name="edit" />
-                  </button>
-                  <button className="mini-btn danger" title="Delete" onClick={() => handleDelete(a)}>
-                    <Icon name="trash" />
-                  </button>
+                  <MorphEditButton
+                    morphId={`acct-${a.id}`}
+                    title="Edit Account"
+                    tooltip="Edit account"
+                  >
+                    {(close) => (
+                      <AccountEditorBody
+                        initial={a}
+                        defaultCurrency={currency}
+                        onCancel={close}
+                        onSaved={(msg) => {
+                          close();
+                          onChanged(msg);
+                        }}
+                      />
+                    )}
+                  </MorphEditButton>
+
+                  <MotionTooltip content="Delete account">
+                    <button
+                      type="button"
+                      className="mini-btn danger"
+                      onClick={() => handleDelete(a)}
+                      aria-label="Delete account"
+                    >
+                      <Icon name="trash" />
+                    </button>
+                  </MotionTooltip>
+
+                  <CardDragHandle
+                    id={a.id}
+                    onStartDrag={setDraggingId}
+                    onEndDrag={() => setDraggingId(null)}
+                  />
                 </span>
               </div>
 
               <div className="between">
-                <div className="cell-strong" style={{ fontSize: 16 }}>
+                <motion.div
+                  layoutId={`${cardLayoutId}-title`}
+                  className="cell-strong"
+                  style={{ fontSize: 16 }}
+                >
                   {a.name}
-                </div>
+                </motion.div>
                 <span className="muted num" style={{ fontSize: 12, fontWeight: 700 }}>
                   {a.currency}
                 </span>
@@ -110,9 +182,13 @@ export function AccountsView({
                 <div className="muted" style={{ fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   Balance
                 </div>
-                <div className="num" style={{ fontSize: 29, fontWeight: 700, color: "var(--ink)" }}>
+                <motion.div
+                  layoutId={`${cardLayoutId}-val`}
+                  className="num"
+                  style={{ fontSize: 29, fontWeight: 700, color: "var(--ink)" }}
+                >
                   {fmtMoney(a.current_balance, { currency })}
-                </div>
+                </motion.div>
               </div>
 
               <div style={{ marginTop: 16, borderTop: "1px solid var(--line)", paddingTop: 12 }}>
@@ -157,103 +233,89 @@ export function AccountsView({
         })}
       </div>
 
-      {detail && (
-        <AccountDetailModal
-          account={detail}
-          transactions={transactions.filter((t) => t.account_id === detail.id)}
-          currency={currency}
-          onClose={() => setDetail(null)}
-        />
-      )}
+      <ExpandableCardSheet
+        open={Boolean(detail)}
+        cardLayoutId={detail ? `appstore-acct-${detail.id}` : "appstore-acct-none"}
+        subtitle={detail ? `${detail.account_type.toUpperCase()} · ${detail.currency}` : undefined}
+        title={detail?.name || ""}
+        headlineValue={detail ? fmtMoney(detail.current_balance, { currency }) : undefined}
+        onClose={() => setDetailId(null)}
+      >
+        {detail && (
+          <>
+            <div className="grid2" style={{ marginBottom: 16 }}>
+              <div className="callout-tile callout-tile--blue">
+                <div style={{ fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Money in
+                </div>
+                <div className="num" style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>
+                  {fmtMoney(detail.money_in, { cents: false, currency })}
+                </div>
+              </div>
+              <div className="callout-tile callout-tile--black">
+                <div style={{ fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Money out
+                </div>
+                <div className="num" style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>
+                  {fmtMoney(detail.money_out, { cents: false, currency })}
+                </div>
+              </div>
+            </div>
+            <div style={{ maxHeight: 250, overflowY: "auto" }}>
+              {transactions
+                .filter((t) => t.account_id === detail.id)
+                .map((t) => (
+                  <div
+                    key={t.id}
+                    className="between"
+                    style={{ padding: "9px 0", borderBottom: "1px solid var(--line)" }}
+                  >
+                    <div>
+                      <div className="cell-strong" style={{ fontSize: 13.5 }}>
+                        {t.description}
+                      </div>
+                      <div className="muted" style={{ fontSize: 12 }}>
+                        {fmtDate(t.transaction_date)} · {t.category_name}
+                      </div>
+                    </div>
+                    <span className={(toNum(t.signed_amount) >= 0 ? "amt-pos" : "amt-neg") + " num"}>
+                      {fmtMoney(t.signed_amount, { sign: true, currency })}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </>
+        )}
+      </ExpandableCardSheet>
 
-      {editing && (
-        <AccountFormModal
-          initial={editing === "new" ? null : editing}
-          defaultCurrency={currency}
-          onClose={() => setEditing(null)}
-          onSaved={(msg) => {
-            setEditing(null);
-            onChanged(msg);
-          }}
-        />
+      {creating && (
+        <Modal title="Add Account" onClose={() => setCreating(false)}>
+          <div style={{ margin: "-24px" }}>
+            <AccountEditorBody
+              initial={null}
+              defaultCurrency={currency}
+              onCancel={() => setCreating(false)}
+              onSaved={(msg) => {
+                setCreating(false);
+                onChanged(msg);
+              }}
+            />
+          </div>
+        </Modal>
       )}
     </div>
   );
 }
 
-function AccountDetailModal({
-  account,
-  transactions,
-  currency,
-  onClose,
-}: {
-  account: Account;
-  transactions: Transaction[];
-  currency: string;
-  onClose: () => void;
-}) {
-  return (
-    <Modal title={account.name} onClose={onClose} width={560}>
-      <div style={{ textAlign: "center", marginBottom: 18 }}>
-        <div className="muted" style={{ fontSize: 12.5, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-          Current balance
-        </div>
-        <div className="num" style={{ fontSize: 36, fontWeight: 700, color: "var(--ink)" }}>
-          {fmtMoney(account.current_balance, { currency })}
-        </div>
-      </div>
-      <div className="grid2" style={{ marginBottom: 16 }}>
-        <div className="callout-tile callout-tile--blue">
-          <div style={{ fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            Money in
-          </div>
-          <div className="num" style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>
-            {fmtMoney(account.money_in, { cents: false, currency })}
-          </div>
-        </div>
-        <div className="callout-tile callout-tile--black">
-          <div style={{ fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            Money out
-          </div>
-          <div className="num" style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>
-            {fmtMoney(account.money_out, { cents: false, currency })}
-          </div>
-        </div>
-      </div>
-      <div style={{ maxHeight: 240, overflowY: "auto" }}>
-        {transactions.map((t) => (
-          <div
-            key={t.id}
-            className="between"
-            style={{ padding: "9px 0", borderBottom: "1px solid var(--line)" }}
-          >
-            <div>
-              <div className="cell-strong" style={{ fontSize: 13.5 }}>
-                {t.description}
-              </div>
-              <div className="muted" style={{ fontSize: 12 }}>
-                {fmtDate(t.transaction_date)} · {t.category_name}
-              </div>
-            </div>
-            <span className={(toNum(t.signed_amount) >= 0 ? "amt-pos" : "amt-neg") + " num"}>
-              {fmtMoney(t.signed_amount, { sign: true, currency })}
-            </span>
-          </div>
-        ))}
-      </div>
-    </Modal>
-  );
-}
-
-function AccountFormModal({
+function AccountEditorBody({
   initial,
   defaultCurrency,
-  onClose,
+  onCancel,
   onSaved,
 }: {
   initial: Account | null;
   defaultCurrency: string;
-  onClose: () => void;
+  onCancel: () => void;
   onSaved: (msg: string) => void;
 }) {
   const [name, setName] = useState(initial?.name || "");
@@ -291,66 +353,63 @@ function AccountFormModal({
   };
 
   return (
-    <Modal
-      title={initial ? "Edit Account" : "Add Account"}
-      onClose={onClose}
-      footer={
-        <>
-          <button className="btn btn--ghost" onClick={onClose}>
-            Cancel
-          </button>
-          <button className="btn btn--primary" onClick={save}>
-            <Icon name="check" /> Save
-          </button>
-        </>
-      }
-    >
-      {err && <div className="error-banner">{err}</div>}
-      <div className="field" style={{ marginBottom: 14 }}>
-        <label>Account name</label>
-        <BaseInput
-          placeholder="Everyday Checking"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-      </div>
-      <div className="grid2" style={{ marginBottom: 14 }}>
-        <div className="field">
-          <label>Account type</label>
-          <BaseSelect
-            value={accountType}
-            onValueChange={(v) => setAccountType(v as AccountType)}
-            options={[
-              { value: "checking", label: "Checking" },
-              { value: "savings", label: "Savings" },
-              { value: "investment", label: "Investment" },
-              { value: "credit", label: "Credit" },
-              { value: "cash", label: "Cash" },
-            ]}
+    <>
+      <div className="mp-morph-panel__body">
+        {err && <div className="error-banner">{err}</div>}
+        <div className="field" style={{ marginBottom: 14 }}>
+          <label>Account name</label>
+          <BaseInput
+            placeholder="Everyday Checking"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
           />
         </div>
+        <div className="grid2" style={{ marginBottom: 14 }}>
+          <div className="field">
+            <label>Account type</label>
+            <BaseSelect
+              value={accountType}
+              onValueChange={(v) => setAccountType(v as AccountType)}
+              options={[
+                { value: "checking", label: "Checking" },
+                { value: "savings", label: "Savings" },
+                { value: "investment", label: "Investment" },
+                { value: "credit", label: "Credit" },
+                { value: "cash", label: "Cash" },
+              ]}
+            />
+          </div>
+          <div className="field">
+            <label>Currency</label>
+            <BaseSelect
+              value={cur}
+              onValueChange={setCur}
+              options={[
+                { value: "USD", label: "USD — US Dollar" },
+                { value: "EUR", label: "EUR — Euro" },
+                { value: "GBP", label: "GBP — Pound" },
+              ]}
+            />
+          </div>
+        </div>
         <div className="field">
-          <label>Currency</label>
-          <BaseSelect
-            value={cur}
-            onValueChange={setCur}
-            options={[
-              { value: "USD", label: "USD — US Dollar" },
-              { value: "EUR", label: "EUR — Euro" },
-              { value: "GBP", label: "GBP — Pound" },
-            ]}
+          <label>Opening balance</label>
+          <CurrencyInput
+            value={opening}
+            onValueChange={setOpening}
+            currency={cur}
+            allowNegative
           />
         </div>
       </div>
-      <div className="field">
-        <label>Opening balance</label>
-        <CurrencyInput
-          value={opening}
-          onValueChange={setOpening}
-          currency={cur}
-          allowNegative
-        />
+      <div className="mp-morph-panel__foot">
+        <button type="button" className="btn btn--ghost" onClick={onCancel}>
+          Cancel
+        </button>
+        <button type="button" className="btn btn--primary" onClick={save}>
+          <Icon name="check" /> Save
+        </button>
       </div>
-    </Modal>
+    </>
   );
 }

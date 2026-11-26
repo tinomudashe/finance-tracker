@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import type { CategoryBreakdownItem, TrendPoint } from "../types";
 import { fmtK, fmtMoney, toNum } from "../utils/format";
+import { MotionTooltip } from "./MotionPatterns";
 
 const BLUE_BLACK_SERIES = [
   "#0352ff",
@@ -180,32 +181,34 @@ export function BarChart({
               }}
             >
               <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: barH }}>
-                <motion.div
-                  title={`Income: ${fmtMoney(inc, { cents: false, currency })}`}
-                  initial={{ scaleY: 0 }}
-                  animate={{ scaleY: 1 }}
-                  transition={{ duration: 0.32, delay: i * 0.035, ease: [0.22, 1, 0.36, 1] }}
-                  style={{
-                    width: 16,
-                    height: incH,
-                    transformOrigin: "bottom",
-                    background: "var(--chart-inc)",
-                    borderRadius: "6px 6px 0 0",
-                  }}
-                />
-                <motion.div
-                  title={`Expenses: ${fmtMoney(exp, { cents: false, currency })}`}
-                  initial={{ scaleY: 0 }}
-                  animate={{ scaleY: 1 }}
-                  transition={{ duration: 0.32, delay: i * 0.035 + 0.04, ease: [0.22, 1, 0.36, 1] }}
-                  style={{
-                    width: 16,
-                    height: expH,
-                    transformOrigin: "bottom",
-                    background: "var(--chart-exp)",
-                    borderRadius: "6px 6px 0 0",
-                  }}
-                />
+                <MotionTooltip content={`${d.month} Income: ${fmtMoney(inc, { cents: false, currency })}`}>
+                  <motion.div
+                    initial={{ scaleY: 0 }}
+                    animate={{ scaleY: 1 }}
+                    transition={{ duration: 0.32, delay: i * 0.035, ease: [0.22, 1, 0.36, 1] }}
+                    style={{
+                      width: 16,
+                      height: incH,
+                      transformOrigin: "bottom",
+                      background: "var(--chart-inc)",
+                      borderRadius: "6px 6px 0 0",
+                    }}
+                  />
+                </MotionTooltip>
+                <MotionTooltip content={`${d.month} Expenses: ${fmtMoney(exp, { cents: false, currency })}`}>
+                  <motion.div
+                    initial={{ scaleY: 0 }}
+                    animate={{ scaleY: 1 }}
+                    transition={{ duration: 0.32, delay: i * 0.035 + 0.04, ease: [0.22, 1, 0.36, 1] }}
+                    style={{
+                      width: 16,
+                      height: expH,
+                      transformOrigin: "bottom",
+                      background: "var(--chart-exp)",
+                      borderRadius: "6px 6px 0 0",
+                    }}
+                  />
+                </MotionTooltip>
               </div>
               <div className="muted" style={{ fontSize: 11.5, fontWeight: 600 }}>
                 {d.month}

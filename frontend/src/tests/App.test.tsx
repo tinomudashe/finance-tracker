@@ -10,6 +10,12 @@ import {
 } from "../components/BaseControls";
 import { BarChart, DonutChart, LineChart } from "../components/Charts";
 import { Icon } from "../components/Icons";
+import {
+  AnimatedNotificationsList,
+  MorphEditButton,
+  MotionTooltipProvider,
+  SkeletonShimmer,
+} from "../components/MotionPatterns";
 import { PEXELS_WALLPAPERS, resolveWallpaperCss } from "../components/Wallpapers";
 import { AuthView } from "../features/AuthView";
 import { DashboardView } from "../features/DashboardView";
@@ -26,7 +32,7 @@ describe("FinanceTrace formatting & i18n utilities", () => {
   });
 });
 
-describe("AuthView, InteractiveContourLines, Base UI Controls & DashboardView", () => {
+describe("Motion.dev Patterns, Base UI Controls & Views", () => {
   it("renders interactive contour lines, logo, and toggles Create Account via Base UI Tabs", () => {
     const { container } = render(<AuthView onAuth={vi.fn()} />);
     expect(container.querySelector('img[src="/logo.svg"]')).not.toBeNull();
@@ -69,6 +75,45 @@ describe("AuthView, InteractiveContourLines, Base UI Controls & DashboardView", 
     expect(screen.getByText("Budget saved via Base UI")).toBeInTheDocument();
   });
 
+  it("supports SkeletonShimmer, MorphEditButton expansion, and AnimatedNotificationsList stack/dismiss", () => {
+    const { container } = render(
+      <MotionTooltipProvider>
+        <SkeletonShimmer width={140} height={20} />
+        <MorphEditButton morphId="test-1" title="Quick Edit Item" tooltip="Open quick edit">
+          {(close) => (
+            <div>
+              <span>Inline Morphed Form</span>
+              <button type="button" onClick={close}>
+                Done
+              </button>
+            </div>
+          )}
+        </MorphEditButton>
+        <AnimatedNotificationsList
+          notifications={[
+            { id: "n1", title: "Dining over budget", body: "Spent $388 of $350", time: "2m", kind: "warn" },
+            { id: "n2", title: "Salary received", body: "+$6,200 credited", time: "1d", kind: "pos" },
+          ]}
+        />
+      </MotionTooltipProvider>
+    );
+
+    expect(container.querySelector(".mp-skeleton")).not.toBeNull();
+    expect(screen.getByText("2 active notifications")).toBeInTheDocument();
+
+    // Morph Edit button -> expanded panel (react-create-button)
+    fireEvent.click(screen.getByLabelText("Open quick edit"));
+    expect(screen.getByText("Inline Morphed Form")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Done"));
+
+    // Stack & dismiss notifications (vue-notifications-list)
+    fireEvent.click(screen.getByText("Stack cards"));
+    expect(screen.getByText("Expand list")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Expand list"));
+    fireEvent.click(screen.getByLabelText("Dismiss Dining over budget"));
+    expect(screen.getByText("1 active notification")).toBeInTheDocument();
+  });
+
   it("renders Flaticon UIcons, Pexels wallpaper resolver, and interactive DiceBear AvatarPicker", () => {
     const onChange = vi.fn();
     const { container } = render(
@@ -101,7 +146,7 @@ describe("AuthView, InteractiveContourLines, Base UI Controls & DashboardView", 
     });
   });
 
-  it("renders Dashboard KPI cards, SVG charts, and opens Base UI Dialog Net Worth modal", () => {
+  it("renders Dashboard KPI cards with Shuffle reorder and opens App Store shared-layout sheet", () => {
     const mockUser = {
       id: "u1",
       email: "daniel.brooks@gmail.com",
@@ -158,33 +203,41 @@ describe("AuthView, InteractiveContourLines, Base UI Controls & DashboardView", 
     };
 
     render(
-      <DashboardView
-        user={mockUser}
-        summary={mockSummary}
-        accounts={[
-          {
-            id: "a1",
-            user_id: "u1",
-            name: "Everyday Checking",
-            account_type: "checking",
-            currency: "USD",
-            opening_balance: 2000,
-            current_balance: 4820.55,
-            money_in: 7530,
-            money_out: -4709.45,
-            is_active: true,
-            recent_transactions: [],
-          },
-        ]}
-        allTransactions={[]}
-        go={vi.fn()}
-        openAddTx={vi.fn()}
-      />
+      <MotionTooltipProvider>
+        <DashboardView
+          user={mockUser}
+          summary={mockSummary}
+          accounts={[
+            {
+              id: "a1",
+              user_id: "u1",
+              name: "Everyday Checking",
+              account_type: "checking",
+              currency: "USD",
+              opening_balance: 2000,
+              current_balance: 4820.55,
+              money_in: 7530,
+              money_out: -4709.45,
+              is_active: true,
+              recent_transactions: [],
+            },
+          ]}
+          allTransactions={[]}
+          go={vi.fn()}
+          openAddTx={vi.fn()}
+        />
+      </MotionTooltipProvider>
     );
 
     expect(screen.getByText("Welcome back, Daniel")).toBeInTheDocument();
     expect(screen.getByText("61%")).toBeInTheDocument();
 
+    // Test Shuffle reorder button (js-reorder-items)
+    fireEvent.click(screen.getByText("Shuffle"));
+    expect(screen.getByText("Reset")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Reset"));
+
+    // Click Net Worth KPI card to open App Store shared-layout sheet (js-app-store)
     fireEvent.click(screen.getByText("Net Worth"));
     expect(screen.getByText("Net worth breakdown")).toBeInTheDocument();
     expect(screen.getByText("Everyday Checking")).toBeInTheDocument();
@@ -192,18 +245,20 @@ describe("AuthView, InteractiveContourLines, Base UI Controls & DashboardView", 
 
   it("renders standalone DonutChart, BarChart, and LineChart SVG primitives", () => {
     const { container } = render(
-      <div>
-        <DonutChart
-          data={[{ category_id: "1", label: "Rent", value: 1450, pct: 100, color: "#0b0f17" }]}
-        />
-        <BarChart data={[{ month: "May", income: 7000, expense: 3500 }]} />
-        <LineChart
-          data={[
-            { month: "Apr", income: 6500, expense: 3200 },
-            { month: "May", income: 7000, expense: 3500 },
-          ]}
-        />
-      </div>
+      <MotionTooltipProvider>
+        <div>
+          <DonutChart
+            data={[{ category_id: "1", label: "Rent", value: 1450, pct: 100, color: "#0b0f17" }]}
+          />
+          <BarChart data={[{ month: "May", income: 7000, expense: 3500 }]} />
+          <LineChart
+            data={[
+              { month: "Apr", income: 6500, expense: 3200 },
+              { month: "May", income: 7000, expense: 3500 },
+            ]}
+          />
+        </div>
+      </MotionTooltipProvider>
     );
     expect(container.querySelectorAll("svg").length).toBe(2);
     expect(screen.getByText("May")).toBeInTheDocument();
