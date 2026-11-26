@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { AvatarPicker, buildDiceBearDataUri, DICEBEAR_STYLES } from "../components/Avatar";
 import { BarChart, DonutChart, LineChart } from "../components/Charts";
+import { Icon } from "../components/Icons";
 import { AuthView } from "../features/AuthView";
 import { DashboardView } from "../features/DashboardView";
 import { fmtK, fmtMoney, LABELS, userInitials } from "../utils/format";
@@ -16,12 +18,34 @@ describe("FinanceTrace formatting & i18n utilities", () => {
   });
 });
 
-describe("AuthView & DashboardView components", () => {
-  it("toggles between Sign In and Create Account modes", () => {
+describe("AuthView, Flaticon UIcons, DiceBear Avatars & DashboardView", () => {
+  it("toggles between Sign In and Create Account modes with DiceBear style preview", () => {
     render(<AuthView onAuth={vi.fn()} />);
     expect(screen.getByText("Explore Demo Workspace (Daniel Brooks)")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
     expect(screen.getByLabelText("Full name")).toBeInTheDocument();
+    expect(screen.getByText("Choose Avatar Style (DiceBear)")).toBeInTheDocument();
+  });
+
+  it("renders Flaticon UIcons classes and interactive DiceBear AvatarPicker", () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <div>
+        <Icon name="wallet" />
+        <AvatarPicker styleId="notionists" seed="Daniel Brooks" bg="0052ff" onChange={onChange} />
+      </div>
+    );
+    expect(container.querySelector("i.fi.fi-rr-wallet")).not.toBeNull();
+    expect(DICEBEAR_STYLES.length).toBeGreaterThanOrEqual(12);
+    const uri = buildDiceBearDataUri({ styleId: "lorelei", seed: "Daniel", bg: "05070a" });
+    expect(uri.startsWith("data:image/svg+xml")).toBe(true);
+
+    fireEvent.click(screen.getByText("Lorelei"));
+    expect(onChange).toHaveBeenCalledWith({
+      styleId: "lorelei",
+      seed: "Daniel Brooks",
+      bg: "0052ff",
+    });
   });
 
   it("renders Dashboard KPI cards, SVG charts, and opens Net Worth breakdown modal", () => {
@@ -31,7 +55,13 @@ describe("AuthView & DashboardView components", () => {
       username: "danielbrooks",
       full_name: "Daniel Brooks",
       is_active: true,
-      preferences: { theme: "light" as const, language: "en" as const, currency: "USD" as const },
+      preferences: {
+        theme: "light" as const,
+        language: "en" as const,
+        currency: "USD" as const,
+        avatar_style: "notionists",
+        font_preset: "modern" as const,
+      },
       created_at: "2026-05-01T00:00:00Z",
     };
     const mockSummary = {
@@ -48,8 +78,8 @@ describe("AuthView & DashboardView components", () => {
         { month: "May", income: 7672, expense: 2971 },
       ],
       breakdown: [
-        { category_id: "c1", label: "Rent", value: 1450, pct: 48.8, color: "#032d60" },
-        { category_id: "c2", label: "Dining", value: 388.45, pct: 13.1, color: "#0176d3" },
+        { category_id: "c1", label: "Rent", value: 1450, pct: 48.8, color: "#0b0f17" },
+        { category_id: "c2", label: "Dining", value: 388.45, pct: 13.1, color: "#0052ff" },
       ],
       budgets: [
         {
@@ -57,7 +87,7 @@ describe("AuthView & DashboardView components", () => {
           user_id: "u1",
           category_id: "c2",
           category_name: "Dining",
-          category_color: "#0176d3",
+          category_color: "#0052ff",
           name: "Dining Budget",
           amount_limit: 350,
           period: "monthly" as const,
@@ -102,7 +132,6 @@ describe("AuthView & DashboardView components", () => {
     expect(screen.getByText("Welcome back, Daniel")).toBeInTheDocument();
     expect(screen.getByText("61%")).toBeInTheDocument();
 
-    // Click Net Worth KPI card to open breakdown modal
     fireEvent.click(screen.getByText("Net Worth"));
     expect(screen.getByText("Net worth breakdown")).toBeInTheDocument();
     expect(screen.getByText("Everyday Checking")).toBeInTheDocument();
@@ -112,7 +141,7 @@ describe("AuthView & DashboardView components", () => {
     const { container } = render(
       <div>
         <DonutChart
-          data={[{ category_id: "1", label: "Rent", value: 1450, pct: 100, color: "#032d60" }]}
+          data={[{ category_id: "1", label: "Rent", value: 1450, pct: 100, color: "#0b0f17" }]}
         />
         <BarChart data={[{ month: "May", income: 7000, expense: 3500 }]} />
         <LineChart

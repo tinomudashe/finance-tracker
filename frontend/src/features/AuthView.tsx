@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { api } from "../api/client";
+import { buildDiceBearDataUri, DICEBEAR_STYLES } from "../components/Avatar";
 import { Icon } from "../components/Icons";
 import type { User } from "../types";
 
@@ -9,6 +10,7 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
   const [password, setPassword] = useState("Password123!");
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
+  const [avatarStyle, setAvatarStyle] = useState("notionists");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -20,7 +22,14 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
       const res =
         mode === "login"
           ? await api.login(email, password)
-          : await api.register(email, password, fullName || "New User", username || undefined);
+          : await api.register(
+              email,
+              password,
+              fullName || "New User",
+              username || undefined,
+              avatarStyle,
+              fullName || username || email
+            );
       onAuth(res.user);
     } catch (ex) {
       setErr(ex instanceof Error ? ex.message : "Authentication failed");
@@ -42,17 +51,21 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
     }
   };
 
+  const previewSeed = fullName || username || email || "FinanceTrace";
+
   return (
     <div className="auth-shell">
       <div className="auth-card">
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22 }}>
           <span className="sf-head-icon">
-            <Icon name="trendUp" />
+            <Icon name="accounts" />
           </span>
           <div>
-            <div style={{ fontSize: 19, fontWeight: 700 }}>FinanceTrace</div>
+            <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "var(--font-display)" }}>
+              FinanceTrace
+            </div>
             <div className="muted" style={{ fontSize: 12.5 }}>
-              Self-Hosted Personal Banking
+              Private Institutional & Personal Ledger
             </div>
           </div>
         </div>
@@ -106,6 +119,42 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
                   onChange={(e) => setUsername(e.target.value)}
                 />
               </div>
+              <div className="field">
+                <label>Choose Avatar Style (DiceBear)</label>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
+                  {DICEBEAR_STYLES.slice(0, 6).map((s) => {
+                    const uri = buildDiceBearDataUri({
+                      styleId: s.id,
+                      seed: previewSeed,
+                      bg: "0052ff",
+                      size: 72,
+                    });
+                    const active = avatarStyle === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        title={s.label}
+                        onClick={() => setAvatarStyle(s.id)}
+                        style={{
+                          padding: 5,
+                          borderRadius: "var(--r-sm)",
+                          border: active ? "2px solid var(--blue)" : "1px solid var(--border)",
+                          background: "var(--surface-2)",
+                          display: "grid",
+                          placeItems: "center",
+                        }}
+                      >
+                        <img
+                          src={uri}
+                          alt={s.label}
+                          style={{ width: 36, height: 36, borderRadius: 6, display: "block" }}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </>
           )}
           <div className="field">
@@ -132,7 +181,7 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
             />
           </div>
           <button className="btn btn--primary" type="submit" disabled={busy} style={{ marginTop: 6 }}>
-            {busy ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
+            <Icon name="check" /> {busy ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
           </button>
         </form>
 

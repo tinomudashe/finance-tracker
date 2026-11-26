@@ -2,6 +2,23 @@ import { useState } from "react";
 import type { CategoryBreakdownItem, TrendPoint } from "../types";
 import { fmtK, fmtMoney, toNum } from "../utils/format";
 
+const BLUE_BLACK_SERIES = [
+  "#0052ff",
+  "#0b0f17",
+  "#2563eb",
+  "#334155",
+  "#3b82f6",
+  "#1e293b",
+  "#60a5fa",
+  "#475569",
+];
+
+/** Ensure any legacy non-blue/black color falls back cleanly to our Blue & Black ramp. */
+export function resolveBlueBlackColor(color: string | undefined, idx = 0): string {
+  if (!color) return BLUE_BLACK_SERIES[idx % BLUE_BLACK_SERIES.length];
+  return color;
+}
+
 export function DonutChart({
   data,
   size = 190,
@@ -41,6 +58,7 @@ export function DonutChart({
             const val = toNum(d.value);
             const frac = val / total;
             const len = frac * c;
+            const strokeColor = resolveBlueBlackColor(d.color, i);
             const el = (
               <circle
                 key={d.category_id || i}
@@ -48,7 +66,7 @@ export function DonutChart({
                 cy={cx}
                 r={r}
                 fill="none"
-                stroke={d.color}
+                stroke={strokeColor}
                 strokeWidth={hover === i ? thickness + 4 : thickness}
                 strokeDasharray={`${len} ${c - len}`}
                 strokeDashoffset={-offset}
@@ -72,7 +90,7 @@ export function DonutChart({
         }}
       >
         <div>
-          <div className="num" style={{ fontSize: 22, fontWeight: 600 }}>
+          <div className="num" style={{ fontSize: 24, fontWeight: 700 }}>
             {hover != null
               ? fmtMoney(data[hover].value, { cents: false, currency })
               : fmtMoney(total, { cents: false, currency })}
@@ -110,7 +128,7 @@ export function BarChart({
         }}
       >
         {Array.from({ length: ticks + 1 }).map((_, i) => (
-          <div key={i} className="muted num" style={{ fontSize: 11 }}>
+          <div key={i} className="muted num" style={{ fontSize: 11.5 }}>
             {fmtK((maxVal * (ticks - i)) / ticks, currency)}
           </div>
         ))}
@@ -155,27 +173,27 @@ export function BarChart({
                 zIndex: 1,
               }}
             >
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: barH }}>
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: barH }}>
                 <div
-                  title={fmtMoney(inc, { cents: false, currency })}
+                  title={`Income: ${fmtMoney(inc, { cents: false, currency })}`}
                   style={{
-                    width: 15,
-                    height: Math.max(3, (inc / maxVal) * barH),
-                    background: "var(--pos)",
-                    borderRadius: "4px 4px 0 0",
+                    width: 16,
+                    height: Math.max(4, (inc / maxVal) * barH),
+                    background: "var(--chart-inc)",
+                    borderRadius: "6px 6px 0 0",
                   }}
                 />
                 <div
-                  title={fmtMoney(exp, { cents: false, currency })}
+                  title={`Expenses: ${fmtMoney(exp, { cents: false, currency })}`}
                   style={{
-                    width: 15,
-                    height: Math.max(3, (exp / maxVal) * barH),
-                    background: "var(--neg)",
-                    borderRadius: "4px 4px 0 0",
+                    width: 16,
+                    height: Math.max(4, (exp / maxVal) * barH),
+                    background: "var(--chart-exp)",
+                    borderRadius: "6px 6px 0 0",
                   }}
                 />
               </div>
-              <div className="muted" style={{ fontSize: 11.5, fontWeight: 500 }}>
+              <div className="muted" style={{ fontSize: 11.5, fontWeight: 600 }}>
                 {d.month}
               </div>
             </div>
@@ -204,16 +222,17 @@ export function LineChart({ data, height = 190 }: { data: TrendPoint[]; height?:
       <path
         d={path("income")}
         fill="none"
-        stroke="var(--pos)"
-        strokeWidth="2.5"
+        stroke="var(--chart-inc)"
+        strokeWidth="2.6"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <path
         d={path("expense")}
         fill="none"
-        stroke="var(--neg)"
-        strokeWidth="2.5"
+        stroke="var(--chart-exp)"
+        strokeWidth="2.6"
+        strokeDasharray="5 4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -222,18 +241,18 @@ export function LineChart({ data, height = 190 }: { data: TrendPoint[]; height?:
           <circle
             cx={xs(i)}
             cy={ys(toNum(d.income))}
-            r="3.4"
+            r="3.8"
             fill="var(--surface)"
-            stroke="var(--pos)"
-            strokeWidth="2"
+            stroke="var(--chart-inc)"
+            strokeWidth="2.2"
           />
           <circle
             cx={xs(i)}
             cy={ys(toNum(d.expense))}
-            r="3.4"
+            r="3.8"
             fill="var(--surface)"
-            stroke="var(--neg)"
-            strokeWidth="2"
+            stroke="var(--chart-exp)"
+            strokeWidth="2.2"
           />
         </g>
       ))}

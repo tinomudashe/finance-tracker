@@ -79,12 +79,18 @@ export function TransactionsView({
             <Icon name="transactions" />
           </span>
           <div>
-            <div className="page-head__eyebrow">Transactions</div>
+            <div className="page-head__eyebrow">Ledger</div>
             <h1>Transactions</h1>
             <div className="sub">
               {filtered.length} of {transactions.length} transactions ·{" "}
-              {fmtMoney(totalIn, { cents: false, currency })} in,{" "}
-              {fmtMoney(totalOut, { cents: false, currency })} out
+              <span className="num" style={{ fontWeight: 700, color: "var(--pos)" }}>
+                {fmtMoney(totalIn, { cents: false, currency })}
+              </span>{" "}
+              in,{" "}
+              <span className="num" style={{ fontWeight: 700, color: "var(--ink)" }}>
+                {fmtMoney(totalOut, { cents: false, currency })}
+              </span>{" "}
+              out
             </div>
           </div>
         </div>
@@ -109,7 +115,7 @@ export function TransactionsView({
         </div>
         <select
           className="select"
-          style={{ width: 150 }}
+          style={{ width: 155 }}
           value={type}
           onChange={(e) => setType(e.target.value)}
         >
@@ -120,7 +126,7 @@ export function TransactionsView({
         </select>
         <select
           className="select"
-          style={{ width: 190 }}
+          style={{ width: 195 }}
           value={acct}
           onChange={(e) => setAcct(e.target.value)}
         >
@@ -133,7 +139,7 @@ export function TransactionsView({
         </select>
         <select
           className="select"
-          style={{ width: 180 }}
+          style={{ width: 185 }}
           value={cat}
           onChange={(e) => setCat(e.target.value)}
         >
@@ -146,63 +152,65 @@ export function TransactionsView({
         </select>
       </div>
 
-      <div className="card" style={{ overflowX: "auto" }}>
-        <table className="tbl">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Account</th>
-              <th>Category</th>
-              <th>Description</th>
-              <th className="right">Amount</th>
-              <th style={{ width: 115 }} />
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((t) => {
-              const pos = toNum(t.signed_amount) >= 0;
-              return (
-                <tr key={t.id} onClick={() => setDetail(t)}>
-                  <td className="cell-muted num" style={{ whiteSpace: "nowrap" }}>
-                    {fmtDate(t.transaction_date)}
-                  </td>
-                  <td className="cell-muted">{t.account_name}</td>
-                  <td>
-                    <Badge label={t.category_name} color={t.category_color} />
-                  </td>
-                  <td className="cell-strong">{t.description}</td>
-                  <td className={"right num " + (pos ? "amt-pos" : "amt-neg")}>
-                    {fmtMoney(t.signed_amount, { sign: true, currency })}
-                  </td>
-                  <td className="right">
-                    <span className="row-act" onClick={(e) => e.stopPropagation()}>
-                      <button className="mini-btn" title="Edit" onClick={() => onOpenEdit(t)}>
-                        <Icon name="edit" />
-                      </button>
-                      <button className="mini-btn" title="Duplicate" onClick={() => onDuplicate(t)}>
-                        <Icon name="copy" />
-                      </button>
-                      <button
-                        className="mini-btn danger"
-                        title="Delete"
-                        onClick={() => setConfirmDel(t)}
-                      >
-                        <Icon name="trash" />
-                      </button>
-                    </span>
+      <div className="card" style={{ overflow: "hidden" }}>
+        <div style={{ overflowX: "auto" }}>
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Account</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th className="right">Amount</th>
+                <th style={{ width: 120 }} />
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((t) => {
+                const pos = toNum(t.signed_amount) >= 0;
+                return (
+                  <tr key={t.id} onClick={() => setDetail(t)}>
+                    <td className="cell-muted num" style={{ whiteSpace: "nowrap" }}>
+                      {fmtDate(t.transaction_date)}
+                    </td>
+                    <td className="cell-muted">{t.account_name}</td>
+                    <td>
+                      <Badge label={t.category_name} color={t.category_color} />
+                    </td>
+                    <td className="cell-strong">{t.description}</td>
+                    <td className={"right num " + (pos ? "amt-pos" : "amt-neg")}>
+                      {fmtMoney(t.signed_amount, { sign: true, currency })}
+                    </td>
+                    <td className="right">
+                      <span className="row-act" onClick={(e) => e.stopPropagation()}>
+                        <button className="mini-btn" title="Edit" onClick={() => onOpenEdit(t)}>
+                          <Icon name="edit" />
+                        </button>
+                        <button className="mini-btn" title="Duplicate" onClick={() => onDuplicate(t)}>
+                          <Icon name="copy" />
+                        </button>
+                        <button
+                          className="mini-btn danger"
+                          title="Delete"
+                          onClick={() => setConfirmDel(t)}
+                        >
+                          <Icon name="trash" />
+                        </button>
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: "center", padding: 42, color: "var(--ink-3)" }}>
+                    No transactions match your filters.
                   </td>
                 </tr>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={6} style={{ textAlign: "center", padding: 42, color: "var(--ink-3)" }}>
-                  No transactions match your filters.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {detail && (
@@ -248,21 +256,17 @@ export function TransactionsView({
         >
           <div style={{ textAlign: "center", padding: "8px 0 24px" }}>
             <span
-              className="badge"
-              style={{
-                background: toNum(detail.signed_amount) >= 0 ? "var(--pos)" : "var(--neg)",
-                color: "#fff",
-                marginBottom: 12,
-              }}
+              className={"badge " + (toNum(detail.signed_amount) >= 0 ? "badge--blue" : "badge--black")}
+              style={{ marginBottom: 12 }}
             >
               {detail.type === "credit" ? "Income" : detail.type === "transfer" ? "Transfer" : "Expense"}
             </span>
             <div
               className="num"
               style={{
-                fontSize: 36,
-                fontWeight: 600,
-                color: toNum(detail.signed_amount) >= 0 ? "var(--pos)" : "var(--neg)",
+                fontSize: 38,
+                fontWeight: 700,
+                color: toNum(detail.signed_amount) >= 0 ? "var(--pos)" : "var(--ink)",
               }}
             >
               {fmtMoney(detail.signed_amount, { sign: true, currency })}
@@ -472,7 +476,7 @@ export function TransactionFormModal({
             onClick={handleAutoSuggest}
             title="Auto-categorize using TF-IDF"
           >
-            Auto-tag
+            <Icon name="tag" /> Auto-tag
           </button>
         </div>
       </div>
@@ -602,7 +606,7 @@ function CSVImportModal({
           <label>CSV File (date, description, amount)</label>
           <input
             className="input"
-            style={{ paddingTop: 7 }}
+            style={{ paddingTop: 8 }}
             type="file"
             accept=".csv,text/csv"
             onChange={(e) => handleFile(e.target.files?.[0] || null)}
@@ -618,7 +622,14 @@ function CSVImportModal({
               .map(([k, v]) => `${k}→"${v}"`)
               .join(", ")}
           </div>
-          <div style={{ maxHeight: 240, overflowY: "auto", border: "1px solid var(--border)" }}>
+          <div
+            style={{
+              maxHeight: 240,
+              overflowY: "auto",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--r-md)",
+            }}
+          >
             <table className="tbl">
               <thead>
                 <tr>
@@ -634,11 +645,7 @@ function CSVImportModal({
                     <td className="num">{r.transaction_date}</td>
                     <td>
                       {r.description}{" "}
-                      {r.is_duplicate && (
-                        <span className="badge" style={{ background: "var(--warn-soft)", color: "var(--warn)" }}>
-                          Duplicate
-                        </span>
-                      )}
+                      {r.is_duplicate && <span className="badge badge--black">Duplicate</span>}
                     </td>
                     <td>{r.suggested_category_name || "—"}</td>
                     <td className="right num">

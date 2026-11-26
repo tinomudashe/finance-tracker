@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
-import { BarChart } from "../components/Charts";
+import { BarChart, resolveBlueBlackColor } from "../components/Charts";
 import { Icon } from "../components/Icons";
 import type { ReportAnalyticsSummary, ReportRecord } from "../types";
 import { fmtMoney, toNum } from "../utils/format";
@@ -94,7 +94,7 @@ export function ReportsView({
             <Icon name="reports" />
           </span>
           <div>
-            <div className="page-head__eyebrow">Reports</div>
+            <div className="page-head__eyebrow">Analytics</div>
             <h1>Reports</h1>
             <div className="sub">Analyse income, spending and savings over time</div>
           </div>
@@ -135,7 +135,7 @@ export function ReportsView({
               onChange={(e) => setToDate(e.target.value)}
             />
           </div>
-          <button className="btn btn--primary" style={{ height: 40 }} onClick={handleGeneratePdf}>
+          <button className="btn btn--primary" style={{ height: 42 }} onClick={handleGeneratePdf}>
             <Icon name="reports" /> Generate PDF Report
           </button>
         </div>
@@ -156,7 +156,7 @@ export function ReportsView({
               <div className="stat__label" style={{ marginBottom: 10 }}>
                 Total Expenses
               </div>
-              <div className="stat__val num" style={{ color: "var(--neg)" }}>
+              <div className="stat__val num" style={{ color: "var(--ink)" }}>
                 {fmtMoney(analytics.total_expense, { cents: false, currency })}
               </div>
             </div>
@@ -166,7 +166,7 @@ export function ReportsView({
               </div>
               <div
                 className="stat__val num"
-                style={{ color: toNum(analytics.net_savings) >= 0 ? "var(--pos)" : "var(--neg)" }}
+                style={{ color: toNum(analytics.net_savings) >= 0 ? "var(--pos)" : "var(--ink)" }}
               >
                 {fmtMoney(analytics.net_savings, { sign: true, cents: false, currency })}
               </div>
@@ -183,6 +183,16 @@ export function ReportsView({
             <div className="card card--pad">
               <div className="card-head">
                 <div className="card-title">Monthly trend</div>
+                <div style={{ display: "flex", gap: 14, fontSize: 12, fontWeight: 600 }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: 3, background: "var(--chart-inc)" }} />
+                    Income
+                  </span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: 3, background: "var(--chart-exp)" }} />
+                    Expenses
+                  </span>
+                </div>
               </div>
               <BarChart data={analytics.trend} height={250} currency={currency} />
             </div>
@@ -192,27 +202,30 @@ export function ReportsView({
                 <div className="card-title">Category breakdown</div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
-                {analytics.breakdown.map((c) => (
-                  <div key={c.category_id}>
-                    <div className="between" style={{ marginBottom: 5 }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 13.5 }}>
-                        <span style={{ width: 9, height: 9, borderRadius: 3, background: c.color }} />
-                        {c.label}
-                      </span>
-                      <span style={{ display: "flex", gap: 10 }}>
-                        <span className="muted num" style={{ fontSize: 12.5 }}>
-                          {c.pct}%
+                {analytics.breakdown.map((c, idx) => {
+                  const barColor = resolveBlueBlackColor(c.color, idx);
+                  return (
+                    <div key={c.category_id}>
+                      <div className="between" style={{ marginBottom: 5 }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 13.5, fontWeight: 500 }}>
+                          <span style={{ width: 10, height: 10, borderRadius: 4, background: barColor }} />
+                          {c.label}
                         </span>
-                        <span className="num cell-strong" style={{ fontSize: 13.5 }}>
-                          {fmtMoney(c.value, { cents: false, currency })}
+                        <span style={{ display: "flex", gap: 10 }}>
+                          <span className="muted num" style={{ fontSize: 12.5 }}>
+                            {c.pct}%
+                          </span>
+                          <span className="num cell-strong" style={{ fontSize: 14 }}>
+                            {fmtMoney(c.value, { cents: false, currency })}
+                          </span>
                         </span>
-                      </span>
+                      </div>
+                      <div className="bar">
+                        <i style={{ width: `${Math.min(100, c.pct)}%`, background: barColor }} />
+                      </div>
                     </div>
-                    <div className="bar">
-                      <i style={{ width: `${Math.min(100, c.pct)}%`, background: c.color }} />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

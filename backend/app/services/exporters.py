@@ -17,7 +17,7 @@ def generate_excel_report(
     ws_sum = wb.active
     ws_sum.title = "Summary"
 
-    header_fill = PatternFill(start_color="0176D3", end_color="0176D3", fill_type="solid")
+    header_fill = PatternFill(start_color="0052FF", end_color="0052FF", fill_type="solid")
     header_font = Font(color="FFFFFF", bold=True)
 
     ws_sum["A1"] = f"FinanceTrace — {analytics.period_label}"
@@ -97,7 +97,7 @@ def generate_pdf_report_file(
     pdf.add_page()
 
     pdf.set_font("Helvetica", "B", 18)
-    pdf.set_text_color(1, 118, 211)
+    pdf.set_text_color(0, 82, 255)
     pdf.cell(0, 10, _ascii_safe(f"FinanceTrace - {title}"), new_x="LMARGIN", new_y="NEXT")
 
     pdf.set_font("Helvetica", "", 11)

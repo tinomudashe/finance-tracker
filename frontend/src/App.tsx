@@ -44,7 +44,7 @@ export default function App() {
     setTimeout(() => setToastMsg(null), 2800);
   }, []);
 
-  // Apply light/dark/system theme preference to <html data-theme="...">
+  // Apply light/dark/system theme and 1001Fonts preset to <html>
   useEffect(() => {
     const pref = user?.preferences?.theme || "light";
     const resolved =
@@ -54,7 +54,8 @@ export default function App() {
           : "light"
         : pref;
     document.documentElement.setAttribute("data-theme", resolved);
-  }, [user?.preferences?.theme]);
+    document.documentElement.setAttribute("data-font", user?.preferences?.font_preset || "modern");
+  }, [user?.preferences?.theme, user?.preferences?.font_preset]);
 
   const refreshWorkspace = useCallback(async () => {
     const [dash, accts, cats, txPage, bgs, notifs] = await Promise.all([

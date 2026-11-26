@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import type { Preferences, RouteId, User } from "../types";
-import { LABELS, userInitials } from "../utils/format";
+import { LABELS } from "../utils/format";
+import { UserAvatar } from "./Avatar";
 import { Icon } from "./Icons";
 
 export function HeaderBar({
@@ -25,12 +26,8 @@ export function HeaderBar({
   const lang = (user.preferences?.language || "en").toUpperCase();
   return (
     <header className="sf-global">
-      <button className="sf-waffle" title="FinanceTrace App Launcher">
-        <span className="grid3">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <i key={i} />
-          ))}
-        </span>
+      <button className="sf-waffle" title="FinanceTrace App Launcher" onClick={() => onGoSettings()}>
+        <Icon name="apps" />
       </button>
       <div className="sf-brand">
         <b>FinanceTrace</b>
@@ -58,8 +55,13 @@ export function HeaderBar({
         <button className="icon-btn" title="Sign out" onClick={onLogout}>
           <Icon name="logout" />
         </button>
-        <div className="avatar" style={{ marginLeft: 4 }} title={user.full_name || user.email}>
-          {userInitials(user.full_name, user.email)}
+        <div style={{ marginLeft: 4 }}>
+          <UserAvatar
+            user={user}
+            size={36}
+            onClick={onGoSettings}
+            title={`${user.full_name || user.email} — Click to customize avatar`}
+          />
         </div>
       </div>
     </header>
@@ -89,9 +91,9 @@ export function TopNav({
     <nav className="sf-nav">
       <div className="sf-appname">
         <span className="sf-appicon">
-          <Icon name="trendUp" />
+          <Icon name="accounts" />
         </span>
-        <b>Personal Banking</b>
+        <b>Private Ledger</b>
       </div>
       {items.map((n) => (
         <button
@@ -109,7 +111,7 @@ export function TopNav({
 
 export function Badge({ label, color }: { label: string; color?: string }) {
   return (
-    <span className="badge" style={{ background: "var(--surface-3)", color: "var(--ink-2)" }}>
+    <span className="badge">
       <span className="swatch" style={{ background: color || "var(--blue)" }} />
       {label}
     </span>
@@ -175,7 +177,7 @@ export function Drawer({
   return (
     <div
       className="overlay"
-      style={{ background: "rgba(11,23,42,0.38)", placeItems: "stretch", padding: 0 }}
+      style={{ placeItems: "stretch", padding: 0 }}
       onMouseDown={onClose}
     >
       <div className="drawer" onMouseDown={(e) => e.stopPropagation()}>

@@ -44,7 +44,7 @@ export function BudgetsView({
             <Icon name="budgets" />
           </span>
           <div>
-            <div className="page-head__eyebrow">Budgets</div>
+            <div className="page-head__eyebrow">Allocation</div>
             <h1>Budgets</h1>
             <div className="sub">
               {fmtMoney(totalSpent, { cents: false, currency })} spent of{" "}
@@ -63,11 +63,11 @@ export function BudgetsView({
             <div className="card-title">Total monthly budget</div>
             <div className="card-sub">Aggregated via budget_utilization</div>
           </div>
-          <div className="num" style={{ fontSize: 22, fontWeight: 600 }}>
-            <span style={{ color: pct > 100 ? "var(--neg)" : "var(--ink)" }}>
+          <div className="num" style={{ fontSize: 24, fontWeight: 700 }}>
+            <span style={{ color: pct > 100 ? "var(--blue)" : "var(--ink)" }}>
               {fmtMoney(totalSpent, { cents: false, currency })}
             </span>
-            <span className="muted" style={{ fontSize: 15, fontWeight: 500 }}>
+            <span className="muted" style={{ fontSize: 16, fontWeight: 600 }}>
               {" "}
               / {fmtMoney(totalLimit, { cents: false, currency })}
             </span>
@@ -77,7 +77,7 @@ export function BudgetsView({
           <i
             style={{
               width: `${Math.min(100, pct)}%`,
-              background: pct > 100 ? "var(--neg)" : "var(--blue)",
+              background: pct > 100 ? "var(--black-950)" : "var(--blue-600)",
             }}
           />
         </div>
@@ -93,36 +93,24 @@ export function BudgetsView({
               key={b.id}
               style={{
                 cursor: "pointer",
-                borderColor: b.over_budget ? "var(--neg)" : "var(--border)",
+                borderColor: b.over_budget ? "var(--blue)" : "var(--border)",
+                borderWidth: b.over_budget ? 1.5 : 1,
               }}
               onClick={() => setDetail(b)}
             >
               <div className="between">
                 <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
                   <span
-                    style={{
-                      width: 30,
-                      height: 30,
-                      borderRadius: 6,
-                      background: "var(--surface-3)",
-                      display: "grid",
-                      placeItems: "center",
-                    }}
+                    className={"stat__ic " + (b.over_budget ? "stat__ic--black" : "")}
+                    style={{ width: 34, height: 34 }}
                   >
-                    <span
-                      style={{
-                        width: 12,
-                        height: 12,
-                        borderRadius: 4,
-                        background: b.category_color,
-                      }}
-                    />
+                    <Icon name={b.over_budget ? "alert" : "budgets"} />
                   </span>
                   <div>
                     <div className="cell-strong" style={{ fontSize: 15 }}>
                       {b.category_name}
                     </div>
-                    <div className="muted" style={{ fontSize: 12 }}>
+                    <div className="muted num" style={{ fontSize: 12 }}>
                       {b.start_date} → {b.end_date}
                     </div>
                   </div>
@@ -141,29 +129,27 @@ export function BudgetsView({
                 <span
                   className="num"
                   style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: b.over_budget ? "var(--neg)" : "var(--ink-2)",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: b.over_budget ? "var(--ink)" : "var(--ink-2)",
                   }}
                 >
                   {p}%
                 </span>
                 {b.over_budget && (
-                  <span className="badge" style={{ background: "var(--neg)", color: "#fff" }}>
-                    <Icon name="alert" style={{ width: 12, height: 12 }} /> Over budget
+                  <span className="badge badge--black">
+                    <Icon name="alert" /> Over budget
                   </span>
                 )}
                 {!b.over_budget && b.alert_triggered && (
-                  <span className="badge" style={{ background: "var(--warn-soft)", color: "var(--warn)" }}>
-                    Nearing limit
-                  </span>
+                  <span className="badge badge--outline-blue">Nearing limit</span>
                 )}
               </div>
               <div className="bar" style={{ height: 8 }}>
                 <i
                   style={{
                     width: `${Math.min(100, p)}%`,
-                    background: b.over_budget ? "var(--neg)" : b.category_color,
+                    background: b.over_budget ? "var(--black-950)" : "var(--blue-600)",
                   }}
                 />
               </div>
@@ -173,13 +159,17 @@ export function BudgetsView({
                   <div className="muted" style={{ fontSize: 11.5 }}>
                     Spent
                   </div>
-                  <div className="num cell-strong">{fmtMoney(b.amount_spent, { currency })}</div>
+                  <div className="num cell-strong" style={{ fontSize: 16 }}>
+                    {fmtMoney(b.amount_spent, { currency })}
+                  </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div className="muted" style={{ fontSize: 11.5 }}>
                     Limit
                   </div>
-                  <div className="num cell-strong">{fmtMoney(b.amount_limit, { currency })}</div>
+                  <div className="num cell-strong" style={{ fontSize: 16 }}>
+                    {fmtMoney(b.amount_limit, { currency })}
+                  </div>
                 </div>
               </div>
               <div
@@ -191,7 +181,7 @@ export function BudgetsView({
                 }}
               >
                 Remaining:{" "}
-                <b className="num" style={{ color: rem < 0 ? "var(--neg)" : "var(--pos)" }}>
+                <b className="num" style={{ color: rem < 0 ? "var(--ink)" : "var(--pos)" }}>
                   {fmtMoney(rem, { currency })}
                 </b>
               </div>
@@ -203,7 +193,7 @@ export function BudgetsView({
       {detail && (
         <Modal title={`${detail.category_name} budget`} onClose={() => setDetail(null)} width={540}>
           <div className="between" style={{ marginBottom: 10 }}>
-            <span className="num" style={{ fontWeight: 600 }}>
+            <span className="num" style={{ fontWeight: 700, fontSize: 15 }}>
               {Math.round(toNum(detail.pct_used))}% used
             </span>
             <span className="num muted">

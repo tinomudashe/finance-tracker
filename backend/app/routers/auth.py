@@ -16,18 +16,18 @@ from scripts.seed import seed_demo_data
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 STARTER_CATEGORIES = [
-    ("Salary", "income", "#0176d3", "trendUp"),
-    ("Freelance", "income", "#014486", "trendUp"),
-    ("Investment", "income", "#057ed4", "trendUp"),
-    ("Rent", "expense", "#032d60", "building"),
-    ("Groceries", "expense", "#014486", "tag"),
-    ("Dining", "expense", "#0176d3", "tag"),
-    ("Transport", "expense", "#1b96ff", "tag"),
-    ("Utilities", "expense", "#05628a", "tag"),
-    ("Shopping", "expense", "#90d0fe", "tag"),
-    ("Entertainment", "expense", "#057ed4", "tag"),
-    ("Healthcare", "expense", "#57b7f5", "tag"),
-    ("Transfer", "transfer", "#706e6b", "arrowR"),
+    ("Salary", "income", "#0052ff", "wallet"),
+    ("Freelance", "income", "#2563eb", "briefcase"),
+    ("Investment", "income", "#3b82f6", "trendUp"),
+    ("Rent", "expense", "#0b0f17", "home"),
+    ("Groceries", "expense", "#003db3", "shopping"),
+    ("Dining", "expense", "#1e293b", "utensils"),
+    ("Transport", "expense", "#00297a", "car"),
+    ("Utilities", "expense", "#334155", "bolt"),
+    ("Shopping", "expense", "#60a5fa", "tag"),
+    ("Entertainment", "expense", "#0f172a", "film"),
+    ("Healthcare", "expense", "#1d4ed8", "health"),
+    ("Transfer", "transfer", "#475569", "arrowR"),
 ]
 
 
@@ -90,7 +90,15 @@ async def register(
         username=username,
         full_name=payload.full_name.strip(),
         password_hash=hash_password(payload.password),
-        preferences={"theme": "light", "language": "en", "currency": "USD"},
+        preferences={
+            "theme": "light",
+            "language": "en",
+            "currency": "USD",
+            "avatar_style": payload.avatar_style or "notionists",
+            "avatar_seed": payload.avatar_seed or payload.full_name.strip(),
+            "avatar_bg": "0052ff",
+            "font_preset": "modern",
+        },
     )
     db.add(user)
     await db.flush()

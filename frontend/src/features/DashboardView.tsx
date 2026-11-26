@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DonutChart, LineChart } from "../components/Charts";
+import { DonutChart, LineChart, resolveBlueBlackColor } from "../components/Charts";
 import { Icon } from "../components/Icons";
 import { Modal } from "../components/Shell";
 import type { Account, DashboardSummary, Preferences, RouteId, Transaction, User } from "../types";
@@ -34,8 +34,7 @@ export function DashboardView({
       delta: `${summary.net_worth_delta_pct >= 0 ? "+" : ""}${summary.net_worth_delta_pct}% this month`,
       up: summary.net_worth_delta_pct >= 0,
       icon: "wallet",
-      tone: "var(--blue)",
-      soft: "var(--blue-soft)",
+      variant: "stat__ic--blue",
     },
     {
       id: "income",
@@ -44,8 +43,7 @@ export function DashboardView({
       delta: `${summary.income_delta_pct >= 0 ? "+" : ""}${summary.income_delta_pct}% vs last month`,
       up: summary.income_delta_pct >= 0,
       icon: "trendUp",
-      tone: "var(--pos)",
-      soft: "var(--pos-soft)",
+      variant: "stat__ic--blue",
     },
     {
       id: "expense",
@@ -55,16 +53,14 @@ export function DashboardView({
       up: summary.expense_delta_pct <= 0,
       down: summary.expense_delta_pct > 0,
       icon: "trendDown",
-      tone: "var(--neg)",
-      soft: "var(--neg-soft)",
+      variant: "stat__ic--black",
     },
     {
       id: "savings",
       label: "Savings Rate",
       val: `${summary.savings_rate}%`,
       icon: "percent",
-      tone: "var(--blue)",
-      soft: "var(--blue-soft)",
+      variant: "stat__ic",
       progress: summary.savings_rate,
     },
   ];
@@ -77,7 +73,7 @@ export function DashboardView({
             <Icon name="dashboard" />
           </span>
           <div>
-            <div className="page-head__eyebrow">Home</div>
+            <div className="page-head__eyebrow">Overview</div>
             <h1>
               {t.welcomeBack}, {firstName}
             </h1>
@@ -94,7 +90,7 @@ export function DashboardView({
           <div className="stat" key={s.id} onClick={() => setStatModal(s.id)}>
             <div className="stat__top">
               <span className="stat__label">{s.label}</span>
-              <span className="stat__ic" style={{ background: s.soft, color: s.tone }}>
+              <span className={`stat__ic ${s.variant}`}>
                 <Icon name={s.icon} />
               </span>
             </div>
@@ -122,12 +118,12 @@ export function DashboardView({
               <div className="card-sub">Last 6 months</div>
             </div>
             <div style={{ display: "flex", gap: 16 }}>
-              <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5 }}>
-                <span style={{ width: 18, height: 3, borderRadius: 2, background: "var(--pos)" }} />
+              <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, fontWeight: 600 }}>
+                <span style={{ width: 18, height: 3, borderRadius: 2, background: "var(--chart-inc)" }} />
                 Income
               </span>
-              <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5 }}>
-                <span style={{ width: 18, height: 3, borderRadius: 2, background: "var(--neg)" }} />
+              <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, fontWeight: 600 }}>
+                <span style={{ width: 18, height: 3, borderRadius: 2, background: "var(--chart-exp)" }} />
                 Expenses
               </span>
             </div>
@@ -135,7 +131,7 @@ export function DashboardView({
           <LineChart data={summary.trend} height={210} />
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, padding: "0 6px" }}>
             {summary.trend.map((p, idx) => (
-              <span key={idx} className="muted" style={{ fontSize: 11.5 }}>
+              <span key={idx} className="muted" style={{ fontSize: 11.5, fontWeight: 600 }}>
                 {p.month}
               </span>
             ))}
@@ -152,13 +148,21 @@ export function DashboardView({
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18 }}>
             <DonutChart data={summary.breakdown} size={188} thickness={24} currency={currency} />
             <div style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px" }}>
-              {summary.breakdown.slice(0, 6).map((b) => (
+              {summary.breakdown.slice(0, 6).map((b, i) => (
                 <div key={b.category_id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5 }}>
-                  <span style={{ width: 9, height: 9, borderRadius: 3, background: b.color, flexShrink: 0 }} />
+                  <span
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: 4,
+                      background: resolveBlueBlackColor(b.color, i),
+                      flexShrink: 0,
+                    }}
+                  />
                   <span className="cell-muted" style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>
                     {b.label}
                   </span>
-                  <span className="num" style={{ fontWeight: 600 }}>
+                  <span className="num" style={{ fontWeight: 700 }}>
                     {fmtMoney(b.value, { cents: false, currency })}
                   </span>
                 </div>
@@ -182,9 +186,9 @@ export function DashboardView({
               return (
                 <div key={b.id}>
                   <div className="between" style={{ marginBottom: 6 }}>
-                    <span style={{ fontSize: 13.5, fontWeight: 500 }}>{b.category_name}</span>
-                    <span className="num muted" style={{ fontSize: 12.5 }}>
-                      <b style={{ color: b.over_budget ? "var(--neg)" : "var(--ink)" }}>
+                    <span style={{ fontSize: 13.5, fontWeight: 600 }}>{b.category_name}</span>
+                    <span className="num muted" style={{ fontSize: 13 }}>
+                      <b style={{ color: b.over_budget ? "var(--blue)" : "var(--ink)" }}>
                         {fmtMoney(b.amount_spent, { cents: false, currency })}
                       </b>{" "}
                       / {fmtMoney(b.amount_limit, { cents: false, currency })}
@@ -194,7 +198,7 @@ export function DashboardView({
                     <i
                       style={{
                         width: `${Math.min(100, pct)}%`,
-                        background: b.over_budget ? "var(--neg)" : b.category_color,
+                        background: b.over_budget ? "var(--black-950)" : "var(--blue-600)",
                       }}
                     />
                   </div>
@@ -227,10 +231,10 @@ export function DashboardView({
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
                     <span
-                      className="stat__ic"
-                      style={{ width: 34, height: 34, background: "var(--surface-3)", color: tx.category_color }}
+                      className={"stat__ic " + (pos ? "stat__ic--blue" : "")}
+                      style={{ width: 34, height: 34, fontSize: 14 }}
                     >
-                      <Icon name={pos ? "trendUp" : "trendDown"} style={{ width: 16, height: 16 }} />
+                      <Icon name={pos ? "trendUp" : "trendDown"} />
                     </span>
                     <div style={{ minWidth: 0 }}>
                       <div
@@ -250,7 +254,7 @@ export function DashboardView({
                       </div>
                     </div>
                   </div>
-                  <span className={(pos ? "amt-pos" : "amt-neg") + " num"} style={{ fontSize: 14 }}>
+                  <span className={(pos ? "amt-pos" : "amt-neg") + " num"}>
                     {fmtMoney(tx.signed_amount, { sign: true, currency })}
                   </span>
                 </div>
@@ -293,15 +297,19 @@ function StatDetailModal({
     return (
       <Modal title="Net worth breakdown" onClose={onClose} width={580}>
         <div className="grid2" style={{ marginBottom: 18 }}>
-          <div style={{ background: "var(--blue-soft)", padding: 16, borderRadius: 4, textAlign: "center" }}>
-            <div style={{ fontSize: 12.5, color: "var(--blue)", fontWeight: 600 }}>Total Net Worth</div>
-            <div className="num" style={{ fontSize: 24, fontWeight: 700, color: "var(--blue)" }}>
+          <div className="callout-tile callout-tile--blue">
+            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+              Total Net Worth
+            </div>
+            <div className="num" style={{ fontSize: 27, fontWeight: 700, marginTop: 4 }}>
               {fmtMoney(summary.net_worth, { currency })}
             </div>
           </div>
-          <div style={{ background: "var(--pos-soft)", padding: 16, borderRadius: 4, textAlign: "center" }}>
-            <div style={{ fontSize: 12.5, color: "var(--pos)", fontWeight: 600 }}>Monthly Change</div>
-            <div className="num" style={{ fontSize: 24, fontWeight: 700, color: "var(--pos)" }}>
+          <div className="callout-tile callout-tile--black">
+            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+              Monthly Change
+            </div>
+            <div className="num" style={{ fontSize: 27, fontWeight: 700, marginTop: 4 }}>
               {summary.net_worth_delta_pct >= 0 ? "+" : ""}
               {summary.net_worth_delta_pct}%
             </div>
@@ -312,9 +320,10 @@ function StatDetailModal({
             key={a.id}
             className="between"
             style={{
-              padding: "12px 14px",
+              padding: "12px 16px",
               background: "var(--surface-2)",
-              borderRadius: 4,
+              border: "1px solid var(--border)",
+              borderRadius: "var(--r-sm)",
               marginBottom: 8,
             }}
           >
@@ -324,13 +333,7 @@ function StatDetailModal({
                 {a.account_type}
               </div>
             </div>
-            <span
-              className="num"
-              style={{
-                fontWeight: 600,
-                color: toNum(a.current_balance) < 0 ? "var(--neg)" : "var(--ink)",
-              }}
-            >
+            <span className="num" style={{ fontWeight: 700, fontSize: 16 }}>
               {fmtMoney(a.current_balance, { currency })}
             </span>
           </div>
@@ -344,7 +347,7 @@ function StatDetailModal({
     return (
       <Modal title="Savings rate" onClose={onClose} width={500}>
         <div style={{ textAlign: "center", marginBottom: 18 }}>
-          <div className="num" style={{ fontSize: 44, fontWeight: 700, color: "var(--blue)" }}>
+          <div className="num" style={{ fontSize: 48, fontWeight: 700, color: "var(--blue)" }}>
             {summary.savings_rate}%
           </div>
           <div className="muted">of monthly income saved ({fmtMoney(saved, { currency })})</div>

@@ -26,6 +26,46 @@ async def seed_demo_data(db: AsyncSession) -> User:
     """Populate the database with Daniel Brooks's realistic 6-month finance dataset if missing."""
     existing = await db.scalar(select(User).where(User.email == DEMO_EMAIL))
     if existing:
+        prefs = dict(existing.preferences or {})
+        changed = False
+        if "avatar_style" not in prefs:
+            prefs["avatar_style"] = "notionists"
+            prefs["avatar_seed"] = existing.full_name or "Daniel Brooks"
+            prefs["avatar_bg"] = "0052ff"
+            changed = True
+        if "font_preset" not in prefs:
+            prefs["font_preset"] = "modern"
+            changed = True
+        if changed:
+            existing.preferences = prefs
+        palette_map = {
+            "Salary": ("#0052ff", "wallet"),
+            "Freelance": ("#2563eb", "briefcase"),
+            "Investment": ("#3b82f6", "trendUp"),
+            "Rent": ("#0b0f17", "home"),
+            "Groceries": ("#003db3", "shopping"),
+            "Dining": ("#1e293b", "utensils"),
+            "Transport": ("#00297a", "car"),
+            "Utilities": ("#334155", "bolt"),
+            "Shopping": ("#60a5fa", "tag"),
+            "Entertainment": ("#0f172a", "film"),
+            "Healthcare": ("#1d4ed8", "health"),
+            "Transfer": ("#475569", "arrowR"),
+            "Coffee Shops": ("#1e293b", "utensils"),
+        }
+        existing_cats = (
+            await db.scalars(select(Category).where(Category.user_id == existing.id))
+        ).all()
+        for cat in existing_cats:
+            if cat.name in palette_map:
+                new_color, new_icon = palette_map[cat.name]
+                if cat.color != new_color or cat.icon != new_icon:
+                    cat.color = new_color
+                    cat.icon = new_icon
+                    changed = True
+        if changed:
+            await db.commit()
+            await db.refresh(existing)
         return existing
 
     user = User(
@@ -33,7 +73,15 @@ async def seed_demo_data(db: AsyncSession) -> User:
         username="danielbrooks",
         full_name="Daniel Brooks",
         password_hash=_hash_pw(DEMO_PASSWORD),
-        preferences={"theme": "light", "language": "en", "currency": "USD"},
+        preferences={
+            "theme": "light",
+            "language": "en",
+            "currency": "USD",
+            "avatar_style": "notionists",
+            "avatar_seed": "Daniel Brooks",
+            "avatar_bg": "0052ff",
+            "font_preset": "modern",
+        },
     )
     db.add(user)
     await db.flush()
@@ -60,18 +108,18 @@ async def seed_demo_data(db: AsyncSession) -> User:
     await db.flush()
 
     cat_specs = [
-        ("Salary", "income", "#0176d3", "trendUp", True),
-        ("Freelance", "income", "#014486", "trendUp", True),
-        ("Investment", "income", "#057ed4", "trendUp", True),
-        ("Rent", "expense", "#032d60", "building", True),
-        ("Groceries", "expense", "#014486", "tag", True),
-        ("Dining", "expense", "#0176d3", "tag", True),
-        ("Transport", "expense", "#1b96ff", "tag", True),
-        ("Utilities", "expense", "#05628a", "tag", True),
-        ("Shopping", "expense", "#90d0fe", "tag", True),
-        ("Entertainment", "expense", "#057ed4", "tag", True),
-        ("Healthcare", "expense", "#57b7f5", "tag", True),
-        ("Transfer", "transfer", "#706e6b", "arrowR", True),
+        ("Salary", "income", "#0052ff", "wallet", True),
+        ("Freelance", "income", "#2563eb", "briefcase", True),
+        ("Investment", "income", "#3b82f6", "trendUp", True),
+        ("Rent", "expense", "#0b0f17", "home", True),
+        ("Groceries", "expense", "#003db3", "shopping", True),
+        ("Dining", "expense", "#1e293b", "utensils", True),
+        ("Transport", "expense", "#00297a", "car", True),
+        ("Utilities", "expense", "#334155", "bolt", True),
+        ("Shopping", "expense", "#60a5fa", "tag", True),
+        ("Entertainment", "expense", "#0f172a", "film", True),
+        ("Healthcare", "expense", "#1d4ed8", "health", True),
+        ("Transfer", "transfer", "#475569", "arrowR", True),
     ]
     categories: dict[str, Category] = {}
     for name, ctype, color, icon, is_sys in cat_specs:
@@ -93,8 +141,8 @@ async def seed_demo_data(db: AsyncSession) -> User:
         parent_id=categories["Dining"].id,
         name="Coffee Shops",
         type="expense",
-        color="#0176d3",
-        icon="tag",
+        color="#1e293b",
+        icon="utensils",
         is_system=False,
     )
     db.add(coffee_sub)

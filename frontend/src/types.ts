@@ -6,10 +6,16 @@ export type RouteId =
   | "reports"
   | "settings";
 
+export type FontPreset = "modern" | "heritage" | "fintech";
+
 export interface Preferences {
   theme: "light" | "dark" | "system";
   language: "en" | "pl" | "fr";
   currency: "USD" | "EUR" | "GBP";
+  avatar_style?: string;
+  avatar_seed?: string | null;
+  avatar_bg?: string;
+  font_preset?: FontPreset;
 }
 
 export interface User {

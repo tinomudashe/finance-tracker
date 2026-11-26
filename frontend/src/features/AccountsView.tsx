@@ -48,7 +48,7 @@ export function AccountsView({
             <Icon name="accounts" />
           </span>
           <div>
-            <div className="page-head__eyebrow">Accounts</div>
+            <div className="page-head__eyebrow">Vaults & Cards</div>
             <h1>Accounts</h1>
             <div className="sub">
               {accounts.length} accounts · total balance{" "}
@@ -66,26 +66,25 @@ export function AccountsView({
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(310px, 1fr))", gap: 18 }}>
         {accounts.map((a) => {
           const neg = toNum(a.current_balance) < 0;
-          const accent = neg ? "var(--neg)" : "var(--blue)";
           return (
             <div
               className="card card--pad"
               key={a.id}
-              style={{ cursor: "pointer", display: "flex", flexDirection: "column" }}
+              style={{ cursor: "pointer", display: "flex", flexDirection: "column", overflow: "hidden" }}
               onClick={() => setDetail(a)}
             >
               <div
                 style={{
-                  borderTop: `3px solid ${accent}`,
-                  margin: "-20px -22px 16px",
-                  borderRadius: "4px 4px 0 0",
+                  height: 4,
+                  background: neg ? "var(--black-950)" : "var(--blue-600)",
+                  margin: "-22px -24px 18px",
                 }}
               />
               <div className="between">
                 <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
                   <span
-                    className="stat__ic"
-                    style={{ background: "var(--surface-3)", color: accent, flexShrink: 0 }}
+                    className={"stat__ic " + (neg ? "stat__ic--black" : "stat__ic--blue")}
+                    style={{ flexShrink: 0 }}
                   >
                     <Icon name={KIND_ICON[a.account_type] || "wallet"} />
                   </span>
@@ -95,12 +94,7 @@ export function AccountsView({
                     </div>
                     <span
                       className="badge"
-                      style={{
-                        background: "var(--surface-3)",
-                        color: "var(--ink-2)",
-                        marginTop: 4,
-                        textTransform: "capitalize",
-                      }}
+                      style={{ marginTop: 4, textTransform: "capitalize" }}
                     >
                       {a.account_type}
                     </span>
@@ -117,17 +111,10 @@ export function AccountsView({
               </div>
 
               <div style={{ marginTop: 18 }}>
-                <div className="muted" style={{ fontSize: 12.5 }}>
+                <div className="muted" style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   Balance
                 </div>
-                <div
-                  className="num"
-                  style={{
-                    fontSize: 26,
-                    fontWeight: 600,
-                    color: neg ? "var(--neg)" : "var(--ink)",
-                  }}
-                >
+                <div className="num" style={{ fontSize: 29, fontWeight: 700, color: "var(--ink)" }}>
                   {fmtMoney(a.current_balance, { currency })}
                 </div>
               </div>
@@ -136,8 +123,9 @@ export function AccountsView({
                 <div
                   className="muted"
                   style={{
-                    fontSize: 11.5,
-                    letterSpacing: "0.05em",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
                     textTransform: "uppercase",
                     marginBottom: 8,
                   }}
@@ -211,30 +199,27 @@ function AccountDetailModal({
   return (
     <Modal title={account.name} onClose={onClose} width={560}>
       <div style={{ textAlign: "center", marginBottom: 18 }}>
-        <div className="muted" style={{ fontSize: 13 }}>
+        <div className="muted" style={{ fontSize: 12.5, textTransform: "uppercase", letterSpacing: "0.05em" }}>
           Current balance
         </div>
-        <div
-          className="num"
-          style={{
-            fontSize: 34,
-            fontWeight: 700,
-            color: toNum(account.current_balance) < 0 ? "var(--neg)" : "var(--ink)",
-          }}
-        >
+        <div className="num" style={{ fontSize: 36, fontWeight: 700, color: "var(--ink)" }}>
           {fmtMoney(account.current_balance, { currency })}
         </div>
       </div>
       <div className="grid2" style={{ marginBottom: 16 }}>
-        <div style={{ background: "var(--pos-soft)", padding: 14, borderRadius: 4, textAlign: "center" }}>
-          <div style={{ fontSize: 12, color: "var(--pos)", fontWeight: 600 }}>Money in</div>
-          <div className="num" style={{ fontSize: 20, fontWeight: 600, color: "var(--pos)" }}>
+        <div className="callout-tile callout-tile--blue">
+          <div style={{ fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Money in
+          </div>
+          <div className="num" style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>
             {fmtMoney(account.money_in, { cents: false, currency })}
           </div>
         </div>
-        <div style={{ background: "var(--neg-soft)", padding: 14, borderRadius: 4, textAlign: "center" }}>
-          <div style={{ fontSize: 12, color: "var(--neg)", fontWeight: 600 }}>Money out</div>
-          <div className="num" style={{ fontSize: 20, fontWeight: 600, color: "var(--neg)" }}>
+        <div className="callout-tile callout-tile--black">
+          <div style={{ fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Money out
+          </div>
+          <div className="num" style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>
             {fmtMoney(account.money_out, { cents: false, currency })}
           </div>
         </div>

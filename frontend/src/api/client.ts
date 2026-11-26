@@ -67,10 +67,17 @@ export const api = {
     setAccessToken(out.access_token);
     return out;
   },
-  async register(email: string, password: string, full_name: string, username?: string): Promise<AuthResponse> {
+  async register(
+    email: string,
+    password: string,
+    full_name: string,
+    username?: string,
+    avatar_style?: string,
+    avatar_seed?: string
+  ): Promise<AuthResponse> {
     const out = await request<AuthResponse>("/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email, password, full_name, username }),
+      body: JSON.stringify({ email, password, full_name, username, avatar_style, avatar_seed }),
     });
     setAccessToken(out.access_token);
     return out;
@@ -137,6 +144,7 @@ export const api = {
     name: string;
     type: Category["type"];
     color: string;
+    icon?: string | null;
     parent_id?: string | null;
   }) =>
     request<Category>("/api/categories", {
@@ -145,7 +153,7 @@ export const api = {
     }),
   updateCategory: (
     id: string,
-    payload: Partial<{ name: string; type: Category["type"]; color: string }>
+    payload: Partial<{ name: string; type: Category["type"]; color: string; icon: string | null }>
   ) =>
     request<Category>(`/api/categories/${id}`, {
       method: "PUT",

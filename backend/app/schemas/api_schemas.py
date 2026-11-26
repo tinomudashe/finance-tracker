@@ -10,6 +10,10 @@ class PreferencesSchema(BaseModel):
     theme: Literal["light", "dark", "system"] = "light"
     language: Literal["en", "pl", "fr"] = "en"
     currency: Literal["USD", "EUR", "GBP"] = "USD"
+    avatar_style: str = Field(default="notionists", max_length=40)
+    avatar_seed: Optional[str] = Field(default=None, max_length=80)
+    avatar_bg: str = Field(default="0052ff", max_length=16)
+    font_preset: Literal["modern", "heritage", "fintech"] = "modern"
 
 
 class RegisterRequest(BaseModel):
@@ -17,6 +21,8 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     full_name: str = Field(min_length=1, max_length=100)
     username: Optional[str] = Field(default=None, max_length=50)
+    avatar_style: Optional[str] = Field(default=None, max_length=40)
+    avatar_seed: Optional[str] = Field(default=None, max_length=80)
     seed_starter_categories: bool = True
 
 
@@ -106,7 +112,7 @@ CategoryTypeLiteral = Literal["income", "expense", "transfer"]
 class CategoryCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     type: CategoryTypeLiteral
-    color: str = Field(default="#0176d3", max_length=32)
+    color: str = Field(default="#0052ff", max_length=32)
     icon: Optional[str] = Field(default="tag", max_length=50)
     parent_id: Optional[uuid.UUID] = None
 
