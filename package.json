@@ -1,0 +1,7 @@
+{
+  "name": "finance-tracker-monorepo",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ]
+}

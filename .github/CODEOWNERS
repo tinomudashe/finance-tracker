@@ -1,0 +1,9 @@
+# Component owners per Technical Alignment Strategy
+/backend/sql/          @tinomudashe
+/backend/alembic/      @tinomudashe
+/backend/app/models/   @tinomudashe
+/backend/app/          @tinomudashe
+/frontend/             @tinomudashe
+/nginx/                @tinomudashe
+/docker-compose*.yml   @tinomudashe
+/.github/              @tinomudashe

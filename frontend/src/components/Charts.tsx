@@ -1,0 +1,242 @@
+import { useState } from "react";
+import type { CategoryBreakdownItem, TrendPoint } from "../types";
+import { fmtK, fmtMoney, toNum } from "../utils/format";
+
+export function DonutChart({
+  data,
+  size = 190,
+  thickness = 24,
+  currency = "USD",
+}: {
+  data: CategoryBreakdownItem[];
+  size?: number;
+  thickness?: number;
+  currency?: string;
+}) {
+  const total = data.reduce((s, d) => s + toNum(d.value), 0);
+  const r = (size - thickness) / 2;
+  const c = 2 * Math.PI * r;
+  const [hover, setHover] = useState<number | null>(null);
+  let offset = 0;
+  const cx = size / 2;
+
+  return (
+    <div style={{ position: "relative", width: size, height: size }}>
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        style={{ transform: "rotate(-90deg)" }}
+      >
+        <circle
+          cx={cx}
+          cy={cx}
+          r={r}
+          fill="none"
+          stroke="var(--surface-3)"
+          strokeWidth={thickness}
+        />
+        {total > 0 &&
+          data.map((d, i) => {
+            const val = toNum(d.value);
+            const frac = val / total;
+            const len = frac * c;
+            const el = (
+              <circle
+                key={d.category_id || i}
+                cx={cx}
+                cy={cx}
+                r={r}
+                fill="none"
+                stroke={d.color}
+                strokeWidth={hover === i ? thickness + 4 : thickness}
+                strokeDasharray={`${len} ${c - len}`}
+                strokeDashoffset={-offset}
+                strokeLinecap="butt"
+                style={{ transition: "stroke-width .15s", cursor: "pointer" }}
+                onMouseEnter={() => setHover(i)}
+                onMouseLeave={() => setHover(null)}
+              />
+            );
+            offset += len;
+            return el;
+          })}
+      </svg>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "grid",
+          placeItems: "center",
+          textAlign: "center",
+        }}
+      >
+        <div>
+          <div className="num" style={{ fontSize: 22, fontWeight: 600 }}>
+            {hover != null
+              ? fmtMoney(data[hover].value, { cents: false, currency })
+              : fmtMoney(total, { cents: false, currency })}
+          </div>
+          <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
+            {hover != null ? data[hover].label : "Total spent"}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function BarChart({
+  data,
+  height = 240,
+  currency = "USD",
+}: {
+  data: TrendPoint[];
+  height?: number;
+  currency?: string;
+}) {
+  const maxVal = Math.max(100, ...data.flatMap((d) => [toNum(d.income), toNum(d.expense)])) * 1.1;
+  const ticks = 4;
+
+  return (
+    <div style={{ display: "flex", gap: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          height,
+          paddingBottom: 22,
+        }}
+      >
+        {Array.from({ length: ticks + 1 }).map((_, i) => (
+          <div key={i} className="muted num" style={{ fontSize: 11 }}>
+            {fmtK((maxVal * (ticks - i)) / ticks, currency)}
+          </div>
+        ))}
+      </div>
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "flex-end",
+          height,
+          position: "relative",
+        }}
+      >
+        {Array.from({ length: ticks + 1 }).map((_, i) => (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: (i / ticks) * (height - 22),
+              borderTop: "1px dashed var(--line)",
+            }}
+          />
+        ))}
+        {data.map((d, i) => {
+          const inc = toNum(d.income);
+          const exp = toNum(d.expense);
+          const barH = height - 22;
+          return (
+            <div
+              key={i}
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                height,
+                gap: 6,
+                position: "relative",
+                zIndex: 1,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: barH }}>
+                <div
+                  title={fmtMoney(inc, { cents: false, currency })}
+                  style={{
+                    width: 15,
+                    height: Math.max(3, (inc / maxVal) * barH),
+                    background: "var(--pos)",
+                    borderRadius: "4px 4px 0 0",
+                  }}
+                />
+                <div
+                  title={fmtMoney(exp, { cents: false, currency })}
+                  style={{
+                    width: 15,
+                    height: Math.max(3, (exp / maxVal) * barH),
+                    background: "var(--neg)",
+                    borderRadius: "4px 4px 0 0",
+                  }}
+                />
+              </div>
+              <div className="muted" style={{ fontSize: 11.5, fontWeight: 500 }}>
+                {d.month}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export function LineChart({ data, height = 190 }: { data: TrendPoint[]; height?: number }) {
+  if (!data.length) return null;
+  const w = 520;
+  const pad = 10;
+  const allMax = Math.max(100, ...data.flatMap((d) => [toNum(d.income), toNum(d.expense)])) * 1.08;
+  const span = Math.max(1, data.length - 1);
+  const xs = (i: number) => pad + (i * (w - pad * 2)) / span;
+  const ys = (v: number) => height - pad - (v / allMax) * (height - pad * 2);
+  const path = (key: "income" | "expense") =>
+    data
+      .map((d, i) => `${i ? "L" : "M"}${xs(i).toFixed(1)} ${ys(toNum(d[key])).toFixed(1)}`)
+      .join(" ");
+
+  return (
+    <svg viewBox={`0 0 ${w} ${height}`} width="100%" height={height} preserveAspectRatio="none">
+      <path
+        d={path("income")}
+        fill="none"
+        stroke="var(--pos)"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d={path("expense")}
+        fill="none"
+        stroke="var(--neg)"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {data.map((d, i) => (
+        <g key={i}>
+          <circle
+            cx={xs(i)}
+            cy={ys(toNum(d.income))}
+            r="3.4"
+            fill="var(--surface)"
+            stroke="var(--pos)"
+            strokeWidth="2"
+          />
+          <circle
+            cx={xs(i)}
+            cy={ys(toNum(d.expense))}
+            r="3.4"
+            fill="var(--surface)"
+            stroke="var(--neg)"
+            strokeWidth="2"
+          />
+        </g>
+      ))}
+    </svg>
+  );
+}

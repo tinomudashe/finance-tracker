@@ -1,0 +1,126 @@
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - fastapi
+    networks:
+      - frontend-net
+      - backend-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      target: prod
+    expose:
+      - "3000"
+    networks:
+      - frontend-net
+    restart: unless-stopped
+
+  fastapi:
+    build:
+      context: ./backend
+      target: prod
+    env_file:
+      - .env
+    expose:
+      - "8000"
+    volumes:
+      - generated_reports:/app/generated_reports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  celery-worker:
+    build:
+      context: ./backend
+      target: prod
+    env_file:
+      - .env
+    command: celery -A app.tasks.celery_app worker --loglevel=info
+    volumes:
+      - generated_reports:/app/generated_reports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend-net
+    restart: unless-stopped
+
+  celery-beat:
+    build:
+      context: ./backend
+      target: prod
+    env_file:
+      - .env
+    command: celery -A app.tasks.celery_app beat --loglevel=info
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - backend-net
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    expose:
+      - "6379"
+    networks:
+      - backend-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    expose:
+      - "5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  frontend-net:
+    driver: bridge
+  backend-net:
+    driver: bridge
+    internal: true
+
+volumes:
+  postgres_data:
+  generated_reports:

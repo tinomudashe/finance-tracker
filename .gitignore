@@ -1,0 +1,39 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.ruff_cache/
+.mypy_cache/
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+e2e/test-results/
+e2e/playwright-report/
+*.tsbuildinfo
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+
+# Generated reports & local DB artifacts
+*.db
+*.sqlite3
+backend/generated_reports/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
