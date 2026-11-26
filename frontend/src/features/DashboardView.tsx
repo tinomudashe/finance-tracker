@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "motion/react";
 import { DonutChart, LineChart, resolveBlueBlackColor } from "../components/Charts";
 import { Icon } from "../components/Icons";
 import { Modal } from "../components/Shell";
@@ -82,8 +83,16 @@ export function DashboardView({
       </PageHeroCard>
 
       <div className="stat-grid">
-        {stats.map((s) => (
-          <div className="stat" key={s.id} onClick={() => setStatModal(s.id)}>
+        {stats.map((s, idx) => (
+          <motion.div
+            className="stat"
+            key={s.id}
+            onClick={() => setStatModal(s.id)}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.2, delay: idx * 0.035, ease: [0.22, 1, 0.36, 1] }}
+          >
             <div className="stat__top">
               <span className="stat__label">{s.label}</span>
               <span className={`stat__ic ${s.variant}`}>
@@ -99,10 +108,15 @@ export function DashboardView({
             )}
             {s.progress != null && (
               <div className="bar" style={{ marginTop: 12 }}>
-                <i style={{ width: `${Math.min(100, s.progress)}%`, background: "var(--blue-600)" }} />
+                <motion.i
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.min(100, s.progress)}%` }}
+                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ background: "var(--blue-600)" }}
+                />
               </div>
             )}
-          </div>
+          </motion.div>
         ))}
       </div>
 

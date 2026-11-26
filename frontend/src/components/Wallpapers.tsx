@@ -1,5 +1,6 @@
 import React from "react";
 import type { Preferences } from "../types";
+import { BaseInput } from "./BaseControls";
 import { Icon } from "./Icons";
 
 export interface WallpaperOption {
@@ -163,8 +164,7 @@ export function WallpaperPicker({
 
       <div className="field">
         <label>Custom Pexels Image URL (optional)</label>
-        <input
-          className="input"
+        <BaseInput
           placeholder="https://images.pexels.com/photos/..."
           value={customUrl}
           onChange={(e) => onChange({ cardWallpaper: selectedId, customUrl: e.target.value })}

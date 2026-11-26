@@ -1,5 +1,13 @@
 import { useMemo, useState } from "react";
 import { api } from "../api/client";
+import {
+  BaseDatePicker,
+  BaseFileDropzone,
+  BaseInput,
+  BaseSelect,
+  CurrencyInput,
+  SegmentedTabs,
+} from "../components/BaseControls";
 import { Icon } from "../components/Icons";
 import { Badge, Drawer, Modal } from "../components/Shell";
 import { PageHeroCard } from "../components/Wallpapers";
@@ -112,44 +120,52 @@ export function TransactionsView({
             value={externalSearch}
             onChange={(e) => onExternalSearchChange(e.target.value)}
           />
+          {externalSearch && (
+            <button
+              type="button"
+              className="sf-search__clear"
+              onClick={() => onExternalSearchChange("")}
+              aria-label="Clear filter"
+            >
+              <Icon name="close" />
+            </button>
+          )}
         </div>
-        <select
-          className="select"
-          style={{ width: 155 }}
+
+        <BaseSelect
+          width={165}
+          ariaLabel="Filter by transaction type"
           value={type}
-          onChange={(e) => setType(e.target.value)}
-        >
-          <option value="all">All types</option>
-          <option value="income">Income</option>
-          <option value="expense">Expense</option>
-          <option value="transfer">Transfer</option>
-        </select>
-        <select
-          className="select"
-          style={{ width: 195 }}
+          onValueChange={setType}
+          options={[
+            { value: "all", label: "All types" },
+            { value: "income", label: "Income" },
+            { value: "expense", label: "Expense" },
+            { value: "transfer", label: "Transfer" },
+          ]}
+        />
+
+        <BaseSelect
+          width={210}
+          ariaLabel="Filter by account"
           value={acct}
-          onChange={(e) => setAcct(e.target.value)}
-        >
-          <option value="all">All accounts</option>
-          {accounts.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.name}
-            </option>
-          ))}
-        </select>
-        <select
-          className="select"
-          style={{ width: 185 }}
+          onValueChange={setAcct}
+          options={[
+            { value: "all", label: "All accounts" },
+            ...accounts.map((a) => ({ value: a.id, label: a.name, sublabel: a.account_type })),
+          ]}
+        />
+
+        <BaseSelect
+          width={200}
+          ariaLabel="Filter by category"
           value={cat}
-          onChange={(e) => setCat(e.target.value)}
-        >
-          <option value="all">All categories</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+          onValueChange={setCat}
+          options={[
+            { value: "all", label: "All categories" },
+            ...categories.map((c) => ({ value: c.id, label: c.name, sublabel: c.type })),
+          ]}
+        />
       </div>
 
       <div className="card" style={{ overflow: "hidden" }}>
@@ -344,12 +360,14 @@ export function TransactionsView({
 export function TransactionFormModal({
   accounts,
   categories,
+  currency = "USD",
   initial,
   onClose,
   onSaved,
 }: {
   accounts: Account[];
   categories: Category[];
+  currency?: string;
   initial?: Transaction | null;
   onClose: () => void;
   onSaved: (msg: string) => void;
@@ -426,45 +444,27 @@ export function TransactionFormModal({
       }
     >
       {err && <div className="error-banner">{err}</div>}
-      <div className="seg" style={{ marginBottom: 16 }}>
-        <button
-          type="button"
-          className={txType === "debit" ? "active" : ""}
-          onClick={() => setTxType("debit")}
-        >
-          Expense
-        </button>
-        <button
-          type="button"
-          className={txType === "credit" ? "active" : ""}
-          onClick={() => setTxType("credit")}
-        >
-          Income
-        </button>
-        <button
-          type="button"
-          className={txType === "transfer" ? "active" : ""}
-          onClick={() => setTxType("transfer")}
-        >
-          Transfer
-        </button>
-      </div>
+      <SegmentedTabs
+        value={txType}
+        onValueChange={setTxType}
+        items={[
+          { value: "debit", label: "Expense" },
+          { value: "credit", label: "Income" },
+          { value: "transfer", label: "Transfer" },
+        ]}
+        layoutId="tx-form-type-seg"
+        style={{ marginBottom: 16 }}
+      />
 
       <div className="field" style={{ marginBottom: 14 }}>
         <label>Amount</label>
-        <input
-          className="input num"
-          placeholder="0.00"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
-        />
+        <CurrencyInput value={amount} onValueChange={setAmount} currency={currency} />
       </div>
 
       <div className="field" style={{ marginBottom: 14 }}>
         <label>Description</label>
         <div style={{ display: "flex", gap: 8 }}>
-          <input
-            className="input"
+          <BaseInput
             placeholder="e.g. Weekly groceries — FreshMart"
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
@@ -473,10 +473,11 @@ export function TransactionFormModal({
           <button
             type="button"
             className="btn btn--subtle btn--sm"
+            style={{ height: 46 }}
             onClick={handleAutoSuggest}
             title="Auto-categorize using TF-IDF"
           >
-            <Icon name="tag" /> Auto-tag
+            <Icon name="sparkles" /> Auto-tag
           </button>
         </div>
       </div>
@@ -484,38 +485,33 @@ export function TransactionFormModal({
       <div className="grid2" style={{ marginBottom: 14 }}>
         <div className="field">
           <label>Account</label>
-          <select className="select" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
+          <BaseSelect
+            value={accountId}
+            onValueChange={setAccountId}
+            options={accounts.map((a) => ({
+              value: a.id,
+              label: a.name,
+              sublabel: a.account_type,
+            }))}
+          />
         </div>
         <div className="field">
           <label>Category</label>
-          <select
-            className="select"
+          <BaseSelect
             value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-          >
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name} ({c.type})
-              </option>
-            ))}
-          </select>
+            onValueChange={setCategoryId}
+            options={categories.map((c) => ({
+              value: c.id,
+              label: c.name,
+              sublabel: c.type,
+            }))}
+          />
         </div>
       </div>
 
       <div className="field">
         <label>Date</label>
-        <input
-          className="input"
-          type="date"
-          value={txDate}
-          onChange={(e) => setTxDate(e.target.value)}
-        />
+        <BaseDatePicker value={txDate} onChange={setTxDate} ariaLabel="Transaction date" />
       </div>
     </Modal>
   );
@@ -594,23 +590,19 @@ function CSVImportModal({
       <div className="grid2" style={{ marginBottom: 16 }}>
         <div className="field">
           <label>Target Account</label>
-          <select className="select" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
+          <BaseSelect
+            value={accountId}
+            onValueChange={setAccountId}
+            options={accounts.map((a) => ({
+              value: a.id,
+              label: a.name,
+              sublabel: a.account_type,
+            }))}
+          />
         </div>
         <div className="field">
-          <label>CSV File (date, description, amount)</label>
-          <input
-            className="input"
-            style={{ paddingTop: 8 }}
-            type="file"
-            accept=".csv,text/csv"
-            onChange={(e) => handleFile(e.target.files?.[0] || null)}
-          />
+          <label>CSV Statement File</label>
+          <BaseFileDropzone file={file} onFileChange={handleFile} />
         </div>
       </div>
 

@@ -1130,3 +1130,566 @@ button {
     justify-self: start;
   }
 }
+
+
+/* ============================================================
+   Base UI (@base-ui/react) & Motion.dev Component Primitives
+   Zero Generic Browser Controls · Zero Shadows · Zero Tints
+   ============================================================ */
+
+/* Interactive Cursor-Rippling Contour Backdrop on Auth Page */
+.auth-shell {
+  position: relative;
+  overflow: hidden;
+  background-image: none;
+}
+.interactive-contour-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+.interactive-contour-strokes {
+  stroke: var(--border-ink);
+}
+[data-theme="dark"] .interactive-contour-strokes {
+  stroke: #1e293b;
+}
+.auth-card {
+  position: relative;
+  z-index: 1;
+}
+
+/* Search Clear Button */
+.sf-search__clear {
+  border: none;
+  background: transparent;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  color: var(--ink-3);
+  font-size: 16px;
+}
+.sf-search__clear:hover {
+  color: var(--blue-600);
+}
+
+/* TopNav Sliding Motion Underline */
+.nav-item {
+  position: relative;
+  border-bottom: none;
+}
+.nav-item__indicator {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 2.5px;
+  border-radius: var(--r-pill);
+  background: var(--blue-600);
+}
+
+/* Floating UI / Base UI Positioner z-index */
+.bui-positioner {
+  z-index: 95;
+  outline: none;
+}
+
+/* Base UI Select */
+.bui-select-trigger {
+  height: 46px;
+  width: 100%;
+  padding: 0 14px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--border-ink);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+.bui-select-trigger:hover,
+.bui-select-trigger[data-popup-open] {
+  border-color: var(--blue-600);
+}
+.bui-select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--blue-600);
+}
+.bui-select-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bui-select-icon {
+  display: inline-flex;
+  color: var(--ink-2);
+  font-size: 16px;
+  transition: transform 0.16s ease;
+}
+.bui-select-trigger[data-popup-open] .bui-select-icon {
+  transform: rotate(180deg);
+  color: var(--blue-600);
+}
+
+.bui-select-popup,
+.bui-menu-popup,
+.bui-calendar-popup {
+  background: var(--surface);
+  border: 1.5px solid var(--border-ink);
+  border-radius: var(--r-md);
+  padding: 6px;
+  min-width: var(--anchor-width, 190px);
+  max-height: 300px;
+  overflow-y: auto;
+  outline: none;
+  transform-origin: var(--transform-origin);
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+.bui-select-popup[data-starting-style],
+.bui-select-popup[data-ending-style],
+.bui-menu-popup[data-starting-style],
+.bui-menu-popup[data-ending-style],
+.bui-calendar-popup[data-starting-style],
+.bui-calendar-popup[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.97) translateY(-3px);
+}
+
+.bui-select-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bui-select-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: var(--r-xs);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+}
+.bui-select-item[data-highlighted] {
+  background: var(--surface-3);
+  color: var(--blue-600);
+}
+.bui-select-item[data-selected] {
+  background: var(--blue-600);
+  color: #ffffff;
+}
+.bui-select-item__text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bui-select-item__sub {
+  font-size: 11.5px;
+  opacity: 0.78;
+  text-transform: capitalize;
+}
+.bui-select-item__check {
+  display: inline-flex;
+  font-size: 13px;
+}
+
+/* Base UI Header Language Dropdown Menu */
+.bui-lang-trigger {
+  height: 38px;
+  padding: 0 11px;
+  border-radius: var(--r-pill);
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 19px;
+}
+.bui-lang-trigger:hover,
+.bui-lang-trigger[data-popup-open] {
+  background: var(--surface);
+  border-color: var(--border-ink);
+  color: var(--blue-600);
+}
+.bui-lang-trigger__code {
+  font-family: var(--font-num);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.bui-menu-popup {
+  min-width: 190px;
+}
+.bui-menu-heading {
+  padding: 6px 10px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.bui-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: var(--r-xs);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+}
+.bui-menu-item[data-highlighted] {
+  background: var(--surface-3);
+  color: var(--blue-600);
+}
+.bui-menu-item[data-checked] {
+  color: var(--blue-600);
+}
+.bui-menu-item__code {
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--surface-3);
+  color: var(--ink);
+}
+.bui-menu-item[data-checked] .bui-menu-item__code {
+  background: var(--blue-600);
+  color: #ffffff;
+}
+.bui-menu-item__check {
+  display: inline-flex;
+  color: var(--blue-600);
+  font-size: 13px;
+}
+
+/* Base UI Popover Calendar DatePicker */
+.bui-date-trigger {
+  height: 46px;
+  width: 100%;
+  padding: 0 14px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--border-ink);
+  background: var(--surface);
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  transition: border-color 0.15s;
+}
+.bui-date-trigger:hover,
+.bui-date-trigger[data-popup-open] {
+  border-color: var(--blue-600);
+}
+.bui-date-trigger .fi {
+  font-size: 16px;
+  color: var(--blue-600);
+}
+.bui-calendar-popup {
+  width: 286px;
+  max-height: none;
+  padding: 14px;
+}
+.bui-calendar__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.bui-calendar__title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.bui-calendar__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+  margin-bottom: 6px;
+}
+.bui-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.bui-calendar__day {
+  height: 34px;
+  border-radius: var(--r-xs);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+}
+.bui-calendar__day:hover {
+  background: var(--surface-3);
+  border-color: var(--border);
+}
+.bui-calendar__day.active {
+  background: var(--blue-600);
+  border-color: var(--blue-600);
+  color: #ffffff;
+}
+.bui-calendar__foot {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Base UI Refined Input, Currency Prefix & Password Eye */
+.bui-input {
+  height: 46px;
+  padding: 0 15px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--border-ink);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14.5px;
+  width: 100%;
+  transition: border-color 0.15s;
+}
+.bui-input:focus {
+  outline: none;
+  border-color: var(--blue-600);
+}
+.bui-input-group {
+  display: flex;
+  align-items: center;
+  height: 46px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--border-ink);
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.bui-input-group:focus-within {
+  border-color: var(--blue-600);
+}
+.bui-input--bare {
+  border: none;
+  height: 100%;
+  border-radius: 0;
+  padding: 0 13px;
+}
+.bui-input-prefix {
+  padding: 0 12px;
+  height: 100%;
+  display: inline-grid;
+  place-items: center;
+  background: var(--surface-3);
+  border-right: 1px solid var(--border);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.bui-input-adorn {
+  padding: 0 12px;
+  color: var(--ink-3);
+  display: inline-flex;
+  align-items: center;
+}
+.bui-eye-btn {
+  height: 100%;
+  padding: 0 14px;
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  display: inline-grid;
+  place-items: center;
+  font-size: 16px;
+}
+.bui-eye-btn:hover {
+  color: var(--blue-600);
+}
+
+/* CSV File Dropzone */
+.bui-dropzone {
+  height: 46px;
+  padding: 0 14px;
+  border-radius: var(--r-sm);
+  border: 1.5px dashed var(--border-ink);
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.bui-dropzone:hover,
+.bui-dropzone.dragover {
+  border-style: solid;
+  border-color: var(--blue-600);
+  background: var(--surface);
+}
+
+/* Base UI + Motion Segmented Control */
+.bui-seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  padding: 3px;
+  border: 1.5px solid var(--border-ink);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  gap: 3px;
+}
+.bui-seg__tab {
+  position: relative;
+  padding: 10px 15px;
+  border: none;
+  background: transparent;
+  border-radius: calc(var(--r-sm) - 4px);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  outline: none;
+}
+.bui-seg__tab.active {
+  color: #ffffff;
+}
+.bui-seg__pill {
+  position: absolute;
+  inset: 0;
+  border-radius: calc(var(--r-sm) - 4px);
+  background: var(--blue-600);
+  z-index: 0;
+}
+.bui-seg__label {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+/* Base UI Dialog Modal & Drawer Transitions */
+.bui-dialog-viewport {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  pointer-events: none;
+}
+.bui-dialog-popup {
+  pointer-events: auto;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.bui-dialog-popup[data-starting-style],
+.bui-dialog-popup[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.97) translateY(6px);
+}
+.modal__title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+}
+.bui-drawer-popup {
+  z-index: 65;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.bui-drawer-popup[data-starting-style],
+.bui-drawer-popup[data-ending-style] {
+  opacity: 0;
+  transform: translateX(24px);
+}
+
+/* Base UI Toast Viewport & Stacked Root (@base-ui/react/toast) */
+.bui-toast-viewport {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 110;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  outline: none;
+}
+.bui-toast {
+  background: var(--black-950);
+  color: #ffffff;
+  border: 1.5px solid var(--blue-600);
+  border-radius: var(--r-md);
+  padding: 13px 15px;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.bui-toast[data-starting-style],
+.bui-toast[data-ending-style] {
+  opacity: 0;
+  transform: translateY(10px) scale(0.98);
+}
+.bui-toast__content {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.bui-toast__icon {
+  display: inline-flex;
+  font-size: 18px;
+  color: var(--blue-300);
+  flex-shrink: 0;
+}
+.bui-toast__icon--alert {
+  color: #ffffff;
+}
+.bui-toast__body {
+  flex: 1;
+  min-width: 0;
+}
+.bui-toast__title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+.bui-toast__desc {
+  font-size: 12px;
+  color: #cbd5e1;
+  margin-top: 2px;
+}
+.bui-toast__close {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-xs);
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  display: inline-grid;
+  place-items: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.bui-toast__close:hover {
+  background: #141c2c;
+  color: #ffffff;
+}

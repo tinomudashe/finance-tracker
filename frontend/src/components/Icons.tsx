@@ -48,6 +48,14 @@ export const FLATICON_CLASSES: Record<string, string> = {
   film: "fi-rr-film",
   briefcase: "fi-rr-briefcase",
   shuffle: "fi-rr-shuffle",
+  calendar: "fi-rr-calendar",
+  chevronDown: "fi-rr-angle-small-down",
+  chevronLeft: "fi-rr-angle-small-left",
+  chevronRight: "fi-rr-angle-small-right",
+  eye: "fi-rr-eye",
+  eyeOff: "fi-rr-eye-crossed",
+  csv: "fi-rr-file-spreadsheet",
+  sparkles: "fi-rr-sparkles",
 };
 
 export const CATEGORY_ICON_OPTIONS: { id: string; label: string }[] = [

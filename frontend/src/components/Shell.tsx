@@ -1,7 +1,10 @@
-import React, { useEffect } from "react";
+import React from "react";
+import { Dialog } from "@base-ui/react/dialog";
+import { motion } from "motion/react";
 import type { Preferences, RouteId, User } from "../types";
 import { LABELS } from "../utils/format";
 import { UserAvatar } from "./Avatar";
+import { LanguageDropdown } from "./BaseControls";
 import { Icon } from "./Icons";
 
 export function HeaderBar({
@@ -10,7 +13,7 @@ export function HeaderBar({
   onSearchChange,
   onBell,
   hasAlerts,
-  onCycleLanguage,
+  onSelectLanguage,
   onGoHome,
   onGoSettings,
   onLogout,
@@ -20,12 +23,12 @@ export function HeaderBar({
   onSearchChange: (q: string) => void;
   onBell: () => void;
   hasAlerts: boolean;
-  onCycleLanguage: () => void;
+  onSelectLanguage: (lang: Preferences["language"]) => void;
   onGoHome: () => void;
   onGoSettings: () => void;
   onLogout: () => void;
 }) {
-  const lang = (user.preferences?.language || "en").toUpperCase();
+  const lang = user.preferences?.language || "en";
   return (
     <header className="sf-global">
       <button
@@ -43,7 +46,18 @@ export function HeaderBar({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
         />
-        <Icon name="search" />
+        {searchQuery ? (
+          <button
+            type="button"
+            className="sf-search__clear"
+            onClick={() => onSearchChange("")}
+            aria-label="Clear search"
+          >
+            <Icon name="close" />
+          </button>
+        ) : (
+          <Icon name="search" />
+        )}
       </div>
 
       <div className="sf-global__right">
@@ -51,13 +65,9 @@ export function HeaderBar({
           <Icon name="bell" />
           {hasAlerts && <span className="dot" />}
         </button>
-        <button
-          className="icon-btn"
-          title={`Switch language (Current: ${lang})`}
-          onClick={onCycleLanguage}
-        >
-          <Icon name="language" />
-        </button>
+
+        <LanguageDropdown language={lang} onSelectLanguage={onSelectLanguage} />
+
         <button className="icon-btn" title="Settings" onClick={onGoSettings}>
           <Icon name="settings" />
         </button>
@@ -96,16 +106,26 @@ export function TopNav({
 
   return (
     <nav className="sf-nav">
-      {items.map((n) => (
-        <button
-          key={n.id}
-          className={"nav-item" + (route === n.id ? " active" : "")}
-          onClick={() => go(n.id)}
-        >
-          <Icon name={n.icon} />
-          <span>{n.label}</span>
-        </button>
-      ))}
+      {items.map((n) => {
+        const active = route === n.id;
+        return (
+          <button
+            key={n.id}
+            className={"nav-item" + (active ? " active" : "")}
+            onClick={() => go(n.id)}
+          >
+            <Icon name={n.icon} />
+            <span>{n.label}</span>
+            {active && (
+              <motion.span
+                layoutId="topnav-active-indicator"
+                className="nav-item__indicator"
+                transition={{ type: "spring", stiffness: 460, damping: 36 }}
+              />
+            )}
+          </button>
+        );
+      })}
     </nav>
   );
 }
@@ -132,29 +152,27 @@ export function Modal({
   footer?: React.ReactNode;
   width?: number;
 }) {
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [onClose]);
-
   return (
-    <div className="overlay" onMouseDown={onClose}>
-      <div
-        className="modal"
-        style={width ? { maxWidth: width } : undefined}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <div className="modal__head">
-          <h3>{title}</h3>
-          <button className="icon-btn" onClick={onClose} aria-label="Close">
-            <Icon name="close" />
-          </button>
+    <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className="overlay" />
+        <div className="bui-dialog-viewport">
+          <Dialog.Popup
+            className="modal bui-dialog-popup"
+            style={width ? { maxWidth: width } : undefined}
+          >
+            <div className="modal__head">
+              <Dialog.Title className="modal__title">{title}</Dialog.Title>
+              <Dialog.Close className="icon-btn" aria-label="Close">
+                <Icon name="close" />
+              </Dialog.Close>
+            </div>
+            <div className="modal__body">{children}</div>
+            {footer && <div className="modal__foot">{footer}</div>}
+          </Dialog.Popup>
         </div>
-        <div className="modal__body">{children}</div>
-        {footer && <div className="modal__foot">{footer}</div>}
-      </div>
-    </div>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
@@ -169,37 +187,21 @@ export function Drawer({
   children: React.ReactNode;
   footer?: React.ReactNode;
 }) {
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [onClose]);
-
   return (
-    <div
-      className="overlay"
-      style={{ placeItems: "stretch", padding: 0 }}
-      onMouseDown={onClose}
-    >
-      <div className="drawer" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="drawer__head">
-          <h3 style={{ fontSize: 17 }}>{title}</h3>
-          <button className="icon-btn" onClick={onClose} aria-label="Close">
-            <Icon name="close" />
-          </button>
-        </div>
-        <div className="drawer__body">{children}</div>
-        {footer && <div className="drawer__foot">{footer}</div>}
-      </div>
-    </div>
-  );
-}
-
-export function Toast({ msg }: { msg: string }) {
-  return (
-    <div className="toast">
-      <Icon name="checkCircle" />
-      {msg}
-    </div>
+    <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className="overlay" />
+        <Dialog.Popup className="drawer bui-drawer-popup">
+          <div className="drawer__head">
+            <Dialog.Title style={{ fontSize: 17, fontWeight: 700 }}>{title}</Dialog.Title>
+            <Dialog.Close className="icon-btn" aria-label="Close">
+              <Icon name="close" />
+            </Dialog.Close>
+          </div>
+          <div className="drawer__body">{children}</div>
+          {footer && <div className="drawer__foot">{footer}</div>}
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

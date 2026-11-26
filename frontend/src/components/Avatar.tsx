@@ -15,6 +15,7 @@ import {
   shapes,
 } from "@dicebear/collection";
 import type { User } from "../types";
+import { BaseInput } from "./BaseControls";
 import { Icon } from "./Icons";
 
 export interface DiceBearStyleItem {
@@ -160,14 +161,13 @@ export function AvatarPicker({
       <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
         <div className="field" style={{ flex: 1, minWidth: 220 }}>
           <label>Avatar Seed</label>
-          <input
-            className="input"
+          <BaseInput
             value={seed}
             placeholder="Type any name or phrase…"
             onChange={(e) => onChange({ styleId, seed: e.target.value, bg })}
           />
         </div>
-        <button type="button" className="btn btn--ghost" style={{ height: 42 }} onClick={randomizeSeed}>
+        <button type="button" className="btn btn--ghost" style={{ height: 46 }} onClick={randomizeSeed}>
           <Icon name="shuffle" /> Randomize Seed
         </button>
       </div>

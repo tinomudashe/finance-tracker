@@ -1,6 +1,13 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AvatarPicker, buildDiceBearDataUri, DICEBEAR_STYLES } from "../components/Avatar";
+import {
+  AppToastProvider,
+  BaseDatePicker,
+  BaseSelect,
+  LanguageDropdown,
+  showAppToast,
+} from "../components/BaseControls";
 import { BarChart, DonutChart, LineChart } from "../components/Charts";
 import { Icon } from "../components/Icons";
 import { PEXELS_WALLPAPERS, resolveWallpaperCss } from "../components/Wallpapers";
@@ -19,14 +26,47 @@ describe("FinanceTrace formatting & i18n utilities", () => {
   });
 });
 
-describe("AuthView, Flaticon UIcons, DiceBear Avatars & DashboardView", () => {
-  it("toggles between Sign In and Create Account modes with logo and DiceBear style preview", () => {
+describe("AuthView, InteractiveContourLines, Base UI Controls & DashboardView", () => {
+  it("renders interactive contour lines, logo, and toggles Create Account via Base UI Tabs", () => {
     const { container } = render(<AuthView onAuth={vi.fn()} />);
     expect(container.querySelector('img[src="/logo.svg"]')).not.toBeNull();
+    expect(container.querySelector("svg.interactive-contour-svg")).not.toBeNull();
+    expect(container.querySelectorAll("svg.interactive-contour-svg path").length).toBe(10);
     expect(screen.getByText("Explore Demo Workspace (Daniel Brooks)")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
+
+    fireEvent.click(screen.getByRole("tab", { name: "Create Account" }));
     expect(screen.getByLabelText("Full name")).toBeInTheDocument();
     expect(screen.getByText("Choose Avatar Style (DiceBear)")).toBeInTheDocument();
+  });
+
+  it("renders Base UI Toast, LanguageDropdown, BaseSelect, and BaseDatePicker", () => {
+    const onLang = vi.fn();
+    const onSelect = vi.fn();
+    const onDate = vi.fn();
+
+    render(
+      <AppToastProvider>
+        <LanguageDropdown language="en" onSelectLanguage={onLang} />
+        <BaseSelect
+          value="usd"
+          onValueChange={onSelect}
+          options={[
+            { value: "usd", label: "USD — US Dollar" },
+            { value: "eur", label: "EUR — Euro" },
+          ]}
+        />
+        <BaseDatePicker value="2026-05-28" onChange={onDate} />
+      </AppToastProvider>
+    );
+
+    expect(screen.getByText("EN")).toBeInTheDocument();
+    expect(screen.getByText("USD — US Dollar")).toBeInTheDocument();
+    expect(screen.getByText("28 May 2026")).toBeInTheDocument();
+
+    act(() => {
+      showAppToast("Budget saved via Base UI");
+    });
+    expect(screen.getByText("Budget saved via Base UI")).toBeInTheDocument();
   });
 
   it("renders Flaticon UIcons, Pexels wallpaper resolver, and interactive DiceBear AvatarPicker", () => {
@@ -61,7 +101,7 @@ describe("AuthView, Flaticon UIcons, DiceBear Avatars & DashboardView", () => {
     });
   });
 
-  it("renders Dashboard KPI cards, SVG charts, and opens Net Worth breakdown modal", () => {
+  it("renders Dashboard KPI cards, SVG charts, and opens Base UI Dialog Net Worth modal", () => {
     const mockUser = {
       id: "u1",
       email: "daniel.brooks@gmail.com",
@@ -92,7 +132,7 @@ describe("AuthView, Flaticon UIcons, DiceBear Avatars & DashboardView", () => {
       ],
       breakdown: [
         { category_id: "c1", label: "Rent", value: 1450, pct: 48.8, color: "#0b0f17" },
-        { category_id: "c2", label: "Dining", value: 388.45, pct: 13.1, color: "#0052ff" },
+        { category_id: "c2", label: "Dining", value: 388.45, pct: 13.1, color: "#0352ff" },
       ],
       budgets: [
         {
@@ -100,7 +140,7 @@ describe("AuthView, Flaticon UIcons, DiceBear Avatars & DashboardView", () => {
           user_id: "u1",
           category_id: "c2",
           category_name: "Dining",
-          category_color: "#0052ff",
+          category_color: "#0352ff",
           name: "Dining Budget",
           amount_limit: 350,
           period: "monthly" as const,

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api } from "../api/client";
 import { AvatarPicker, UserAvatar } from "../components/Avatar";
+import { BaseInput, BaseSelect, SegmentedTabs } from "../components/BaseControls";
 import { BLUE_BLACK_SWATCHES, CATEGORY_ICON_OPTIONS, Icon } from "../components/Icons";
 import { Drawer, Modal } from "../components/Shell";
 import { PageHeroCard, resolveWallpaperCss, WallpaperPicker } from "../components/Wallpapers";
@@ -113,32 +114,18 @@ export function SettingsView({
         wallpaperCss={currentWallpaperCss}
       />
 
-      <div className="tabs" style={{ marginBottom: 20 }}>
-        <button
-          className={"tab" + (tab === "profile" ? " active" : "")}
-          onClick={() => setTab("profile")}
-        >
-          <Icon name="user" /> Profile & Avatar
-        </button>
-        <button
-          className={"tab" + (tab === "categories" ? " active" : "")}
-          onClick={() => setTab("categories")}
-        >
-          <Icon name="tag" /> Categories
-        </button>
-        <button
-          className={"tab" + (tab === "preferences" ? " active" : "")}
-          onClick={() => setTab("preferences")}
-        >
-          <Icon name="sliders" /> Preferences
-        </button>
-        <button
-          className={"tab" + (tab === "notifications" ? " active" : "")}
-          onClick={() => setTab("notifications")}
-        >
-          <Icon name="bell" /> Notifications
-        </button>
-      </div>
+      <SegmentedTabs
+        value={tab}
+        onValueChange={setTab}
+        items={[
+          { value: "profile", label: "Profile & Avatar", icon: "user" },
+          { value: "categories", label: "Categories", icon: "tag" },
+          { value: "preferences", label: "Preferences", icon: "sliders" },
+          { value: "notifications", label: "Notifications", icon: "bell" },
+        ]}
+        layoutId="settings-section-tabs"
+        style={{ marginBottom: 20 }}
+      />
 
       {tab === "profile" && (
         <div className="card card--pad">
@@ -160,23 +147,15 @@ export function SettingsView({
           <div className="grid2" style={{ borderTop: "1px solid var(--line)", paddingTop: 20, marginBottom: 22 }}>
             <div className="field">
               <label>Full name</label>
-              <input
-                className="input"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
+              <BaseInput value={fullName} onChange={(e) => setFullName(e.target.value)} />
             </div>
             <div className="field">
               <label>Username</label>
-              <input
-                className="input"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
+              <BaseInput value={username} onChange={(e) => setUsername(e.target.value)} />
             </div>
             <div className="field">
               <label>Email address</label>
-              <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <BaseInput value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
           </div>
 
@@ -268,18 +247,17 @@ export function SettingsView({
                 Switch between Light and Obsidian Dark Blue/Black themes.
               </div>
             </div>
-            <div className="seg">
-              {(["light", "dark", "system"] as const).map((m) => (
-                <button
-                  key={m}
-                  className={theme === m ? "active" : ""}
-                  onClick={() => setTheme(m)}
-                  style={{ textTransform: "capitalize" }}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
+            <SegmentedTabs
+              value={theme}
+              onValueChange={setTheme}
+              items={[
+                { value: "light", label: "Light" },
+                { value: "dark", label: "Dark" },
+                { value: "system", label: "System" },
+              ]}
+              layoutId="settings-theme-seg"
+              style={{ minWidth: 270 }}
+            />
           </div>
 
           <div
@@ -292,16 +270,16 @@ export function SettingsView({
                 Select your preferred financial display and ledger typeface pairing.
               </div>
             </div>
-            <select
-              className="select"
-              style={{ width: 290 }}
+            <BaseSelect
+              width={320}
               value={fontPreset}
-              onChange={(e) => setFontPreset(e.target.value as FontPreset)}
-            >
-              <option value="modern">Modern Corporate — Montserrat + Rajdhani</option>
-              <option value="heritage">Private Wealth — Cinzel + Montserrat</option>
-              <option value="fintech">Digital Fintech — Exo 2 + Rajdhani</option>
-            </select>
+              onValueChange={(v) => setFontPreset(v as FontPreset)}
+              options={[
+                { value: "modern", label: "Modern Corporate — Montserrat + Rajdhani" },
+                { value: "heritage", label: "Private Wealth — Cinzel + Montserrat" },
+                { value: "fintech", label: "Digital Fintech — Exo 2 + Rajdhani" },
+              ]}
+            />
           </div>
 
           <div
@@ -314,16 +292,16 @@ export function SettingsView({
                 Display language for navigation.
               </div>
             </div>
-            <select
-              className="select"
-              style={{ width: 200 }}
+            <BaseSelect
+              width={220}
               value={lang}
-              onChange={(e) => setLang(e.target.value as Preferences["language"])}
-            >
-              <option value="en">English</option>
-              <option value="pl">Polski</option>
-              <option value="fr">Français</option>
-            </select>
+              onValueChange={(v) => setLang(v as Preferences["language"])}
+              options={[
+                { value: "en", label: "English" },
+                { value: "pl", label: "Polski" },
+                { value: "fr", label: "Français" },
+              ]}
+            />
           </div>
 
           <div
@@ -336,16 +314,16 @@ export function SettingsView({
                 Default currency symbol for balances and reports.
               </div>
             </div>
-            <select
-              className="select"
-              style={{ width: 200 }}
+            <BaseSelect
+              width={220}
               value={cur}
-              onChange={(e) => setCur(e.target.value as Preferences["currency"])}
-            >
-              <option value="USD">USD — US Dollar</option>
-              <option value="EUR">EUR — Euro</option>
-              <option value="GBP">GBP — Pound</option>
-            </select>
+              onValueChange={(v) => setCur(v as Preferences["currency"])}
+              options={[
+                { value: "USD", label: "USD — US Dollar" },
+                { value: "EUR", label: "EUR — Euro" },
+                { value: "GBP", label: "GBP — Pound" },
+              ]}
+            />
           </div>
 
           <div style={{ paddingTop: 18 }}>
@@ -519,19 +497,19 @@ function CategoryFormModal({
       <div className="grid2" style={{ marginBottom: 14 }}>
         <div className="field">
           <label>Name</label>
-          <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
+          <BaseInput value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="field">
           <label>Type</label>
-          <select
-            className="select"
+          <BaseSelect
             value={type}
-            onChange={(e) => setType(e.target.value as CategoryType)}
-          >
-            <option value="expense">Expense</option>
-            <option value="income">Income</option>
-            <option value="transfer">Transfer</option>
-          </select>
+            onValueChange={(v) => setType(v as CategoryType)}
+            options={[
+              { value: "expense", label: "Expense" },
+              { value: "income", label: "Income" },
+              { value: "transfer", label: "Transfer" },
+            ]}
+          />
         </div>
       </div>
 
@@ -585,14 +563,14 @@ function CategoryFormModal({
       {!initial && (
         <div className="field">
           <label>Parent Category (optional)</label>
-          <select className="select" value={parentId} onChange={(e) => setParentId(e.target.value)}>
-            <option value="">None (top-level)</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <BaseSelect
+            value={parentId || "__none__"}
+            onValueChange={(v) => setParentId(v === "__none__" ? "" : v)}
+            options={[
+              { value: "__none__", label: "None (top-level)" },
+              ...categories.map((c) => ({ value: c.id, label: c.name })),
+            ]}
+          />
         </div>
       )}
     </Modal>

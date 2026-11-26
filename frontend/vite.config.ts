@@ -11,6 +11,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           react: ["react", "react-dom"],
+          ui: ["motion", "@base-ui/react"],
           dicebear: ["@dicebear/core", "@dicebear/collection"],
         },
       },

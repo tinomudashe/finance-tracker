@@ -1,7 +1,10 @@
 import React, { useState } from "react";
+import { motion } from "motion/react";
 import { api } from "../api/client";
 import { buildDiceBearDataUri, DICEBEAR_STYLES } from "../components/Avatar";
+import { BaseInput, PasswordInput, SegmentedTabs } from "../components/BaseControls";
 import { Icon } from "../components/Icons";
+import { InteractiveContourLines } from "../components/InteractiveContourLines";
 import type { User } from "../types";
 
 export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
@@ -55,37 +58,37 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
 
   return (
     <div className="auth-shell">
-      <div className="auth-card">
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
-          <img
+      <InteractiveContourLines />
+
+      <motion.div
+        className="auth-card"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 26 }}>
+          <motion.img
             src="/logo.svg"
             alt="FinanceTrace"
+            whileHover={{ scale: 1.04 }}
+            transition={{ duration: 0.16 }}
             style={{ width: 60, height: 60, borderRadius: 12, display: "block" }}
           />
         </div>
 
-        <div className="seg" style={{ marginBottom: 22 }}>
-          <button
-            type="button"
-            className={mode === "login" ? "active" : ""}
-            onClick={() => {
-              setMode("login");
-              setErr(null);
-            }}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            className={mode === "register" ? "active" : ""}
-            onClick={() => {
-              setMode("register");
-              setErr(null);
-            }}
-          >
-            Create Account
-          </button>
-        </div>
+        <SegmentedTabs
+          value={mode}
+          onValueChange={(next) => {
+            setMode(next);
+            setErr(null);
+          }}
+          items={[
+            { value: "login", label: "Sign In" },
+            { value: "register", label: "Create Account" },
+          ]}
+          layoutId="auth-mode-seg"
+          style={{ marginBottom: 22 }}
+        />
 
         {err && <div className="error-banner">{err}</div>}
 
@@ -94,9 +97,8 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
             <>
               <div className="field">
                 <label htmlFor="fullName">Full name</label>
-                <input
+                <BaseInput
                   id="fullName"
-                  className="input"
                   placeholder="Daniel Brooks"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
@@ -105,9 +107,8 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
               </div>
               <div className="field">
                 <label htmlFor="username">Username (optional)</label>
-                <input
+                <BaseInput
                   id="username"
-                  className="input"
                   placeholder="danielbrooks"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -153,9 +154,8 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
           )}
           <div className="field">
             <label htmlFor="email">Email address</label>
-            <input
+            <BaseInput
               id="email"
-              className="input"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -164,10 +164,8 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
           </div>
           <div className="field">
             <label htmlFor="password">Password</label>
-            <input
+            <PasswordInput
               id="password"
-              className="input"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               minLength={8}
@@ -202,7 +200,7 @@ export function AuthView({ onAuth }: { onAuth: (u: User) => void }) {
             <Icon name="wallet" /> Explore Demo Workspace (Daniel Brooks)
           </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

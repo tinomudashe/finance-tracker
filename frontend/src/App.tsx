@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { api } from "./api/client";
-import { HeaderBar, Toast, TopNav } from "./components/Shell";
+import { AppToastProvider, showAppToast } from "./components/BaseControls";
+import { HeaderBar, TopNav } from "./components/Shell";
 import { resolveWallpaperCss } from "./components/Wallpapers";
 import { AccountsView } from "./features/AccountsView";
 import { AuthView } from "./features/AuthView";
@@ -38,11 +40,13 @@ export default function App() {
 
   const [txModal, setTxModal] = useState<Transaction | "new" | null>(null);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const showToast = useCallback((msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 2800);
+    showAppToast(msg);
+  }, []);
+
+  const showErrorToast = useCallback((msg: string) => {
+    showAppToast(msg, { type: "alert" });
   }, []);
 
   // Apply light/dark/system theme and 1001Fonts preset to <html>
@@ -101,14 +105,18 @@ export default function App() {
     }
   };
 
-  const handleCycleLanguage = async () => {
-    if (!user) return;
-    const order: Preferences["language"][] = ["en", "pl", "fr"];
-    const next = order[(order.indexOf(user.preferences?.language || "en") + 1) % order.length];
+  const handleSelectLanguage = async (next: Preferences["language"]) => {
+    if (!user || user.preferences?.language === next) return;
     const updated = await api.updateProfile({
       preferences: { ...user.preferences, language: next },
     });
     setUser(updated);
+    const names: Record<Preferences["language"], string> = {
+      en: "English",
+      pl: "Polski",
+      fr: "Français",
+    };
+    showAppToast(`Language switched to ${names[next]}`);
   };
 
   const handleLogout = async () => {
@@ -125,139 +133,154 @@ export default function App() {
     );
   }
 
-  if (!user) {
-    return <AuthView onAuth={(u) => setUser(u)} />;
-  }
-
-  const currency = user.preferences?.currency || "USD";
-  const wallpaperCss = resolveWallpaperCss(user.preferences);
+  const currency = user?.preferences?.currency || "USD";
+  const wallpaperCss = resolveWallpaperCss(user?.preferences);
 
   return (
-    <div className="app">
-      <HeaderBar
-        user={user}
-        searchQuery={searchQuery}
-        onSearchChange={handleGlobalSearch}
-        onBell={() => setNotifOpen(true)}
-        hasAlerts={notifications.some((n) => n.kind === "warn")}
-        onCycleLanguage={handleCycleLanguage}
-        onGoHome={() => go("dashboard")}
-        onGoSettings={() => go("settings")}
-        onLogout={handleLogout}
-      />
-      <TopNav route={route} go={go} language={user.preferences?.language} />
+    <AppToastProvider>
+      {!user ? (
+        <AuthView onAuth={(u) => setUser(u)} />
+      ) : (
+        <div className="app">
+          <HeaderBar
+            user={user}
+            searchQuery={searchQuery}
+            onSearchChange={handleGlobalSearch}
+            onBell={() => setNotifOpen(true)}
+            hasAlerts={notifications.some((n) => n.kind === "warn")}
+            onSelectLanguage={handleSelectLanguage}
+            onGoHome={() => go("dashboard")}
+            onGoSettings={() => go("settings")}
+            onLogout={handleLogout}
+          />
+          <TopNav route={route} go={go} language={user.preferences?.language} />
 
-      <div className="main">
-        <div className="scroll">
-          {route === "dashboard" && summary && (
-            <DashboardView
-              user={user}
-              summary={summary}
-              accounts={accounts}
-              allTransactions={transactions}
-              wallpaperCss={wallpaperCss}
-              go={go}
-              openAddTx={() => setTxModal("new")}
-            />
-          )}
-          {route === "transactions" && (
-            <TransactionsView
-              transactions={transactions}
+          <div className="main">
+            <div className="scroll">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={route}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  {route === "dashboard" && summary && (
+                    <DashboardView
+                      user={user}
+                      summary={summary}
+                      accounts={accounts}
+                      allTransactions={transactions}
+                      wallpaperCss={wallpaperCss}
+                      go={go}
+                      openAddTx={() => setTxModal("new")}
+                    />
+                  )}
+                  {route === "transactions" && (
+                    <TransactionsView
+                      transactions={transactions}
+                      accounts={accounts}
+                      categories={categories}
+                      currency={currency}
+                      wallpaperCss={wallpaperCss}
+                      externalSearch={searchQuery}
+                      onExternalSearchChange={setSearchQuery}
+                      onOpenAdd={() => setTxModal("new")}
+                      onOpenEdit={(t) => setTxModal(t)}
+                      onDuplicate={async (t) => {
+                        await api.duplicateTransaction(t.id);
+                        await refreshWorkspace();
+                        showToast("Transaction duplicated");
+                      }}
+                      onDelete={async (t) => {
+                        await api.deleteTransaction(t.id);
+                        await refreshWorkspace();
+                        showToast("Transaction deleted");
+                      }}
+                      onImported={async (msg) => {
+                        await refreshWorkspace();
+                        showToast(msg);
+                      }}
+                    />
+                  )}
+                  {route === "accounts" && (
+                    <AccountsView
+                      accounts={accounts}
+                      transactions={transactions}
+                      currency={currency}
+                      wallpaperCss={wallpaperCss}
+                      onChanged={async (msg) => {
+                        await refreshWorkspace();
+                        showToast(msg);
+                      }}
+                      onError={showErrorToast}
+                    />
+                  )}
+                  {route === "budgets" && (
+                    <BudgetsView
+                      budgets={budgets}
+                      categories={categories}
+                      transactions={transactions}
+                      currency={currency}
+                      wallpaperCss={wallpaperCss}
+                      onChanged={async (msg) => {
+                        await refreshWorkspace();
+                        showToast(msg);
+                      }}
+                      onError={showErrorToast}
+                    />
+                  )}
+                  {route === "reports" && (
+                    <ReportsView
+                      currency={currency}
+                      wallpaperCss={wallpaperCss}
+                      toast={showToast}
+                    />
+                  )}
+                  {route === "settings" && (
+                    <SettingsView
+                      user={user}
+                      categories={categories}
+                      notifications={notifications}
+                      onUserUpdated={(u, msg) => {
+                        setUser(u);
+                        showToast(msg);
+                      }}
+                      onCategoriesChanged={async (msg) => {
+                        await refreshWorkspace();
+                        showToast(msg);
+                      }}
+                      onError={showErrorToast}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {txModal && (
+            <TransactionFormModal
               accounts={accounts}
               categories={categories}
               currency={currency}
-              wallpaperCss={wallpaperCss}
-              externalSearch={searchQuery}
-              onExternalSearchChange={setSearchQuery}
-              onOpenAdd={() => setTxModal("new")}
-              onOpenEdit={(t) => setTxModal(t)}
-              onDuplicate={async (t) => {
-                await api.duplicateTransaction(t.id);
-                await refreshWorkspace();
-                showToast("Transaction duplicated");
-              }}
-              onDelete={async (t) => {
-                await api.deleteTransaction(t.id);
-                await refreshWorkspace();
-                showToast("Transaction deleted");
-              }}
-              onImported={async (msg) => {
+              initial={txModal === "new" ? null : txModal}
+              onClose={() => setTxModal(null)}
+              onSaved={async (msg) => {
+                setTxModal(null);
                 await refreshWorkspace();
                 showToast(msg);
               }}
             />
           )}
-          {route === "accounts" && (
-            <AccountsView
-              accounts={accounts}
-              transactions={transactions}
-              currency={currency}
-              wallpaperCss={wallpaperCss}
-              onChanged={async (msg) => {
-                await refreshWorkspace();
-                showToast(msg);
-              }}
-              onError={showToast}
-            />
-          )}
-          {route === "budgets" && (
-            <BudgetsView
-              budgets={budgets}
-              categories={categories}
-              transactions={transactions}
-              currency={currency}
-              wallpaperCss={wallpaperCss}
-              onChanged={async (msg) => {
-                await refreshWorkspace();
-                showToast(msg);
-              }}
-              onError={showToast}
-            />
-          )}
-          {route === "reports" && (
-            <ReportsView currency={currency} wallpaperCss={wallpaperCss} toast={showToast} />
-          )}
-          {route === "settings" && (
-            <SettingsView
-              user={user}
-              categories={categories}
+
+          {notifOpen && (
+            <NotificationsDrawer
               notifications={notifications}
-              onUserUpdated={(u, msg) => {
-                setUser(u);
-                showToast(msg);
-              }}
-              onCategoriesChanged={async (msg) => {
-                await refreshWorkspace();
-                showToast(msg);
-              }}
-              onError={showToast}
+              onClose={() => setNotifOpen(false)}
             />
           )}
         </div>
-      </div>
-
-      {txModal && (
-        <TransactionFormModal
-          accounts={accounts}
-          categories={categories}
-          initial={txModal === "new" ? null : txModal}
-          onClose={() => setTxModal(null)}
-          onSaved={async (msg) => {
-            setTxModal(null);
-            await refreshWorkspace();
-            showToast(msg);
-          }}
-        />
       )}
-
-      {notifOpen && (
-        <NotificationsDrawer
-          notifications={notifications}
-          onClose={() => setNotifOpen(false)}
-        />
-      )}
-
-      {toastMsg && <Toast msg={toastMsg} />}
-    </div>
+    </AppToastProvider>
   );
 }

@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { motion } from "motion/react";
 import { api } from "../api/client";
+import { BaseDatePicker, BaseInput, BaseSelect, CurrencyInput } from "../components/BaseControls";
 import { Icon } from "../components/Icons";
 import { Modal } from "../components/Shell";
 import { PageHeroCard } from "../components/Wallpapers";
@@ -69,9 +71,11 @@ export function BudgetsView({
           </div>
         </div>
         <div className="bar" style={{ height: 10 }}>
-          <i
+          <motion.i
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.min(100, pct)}%` }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             style={{
-              width: `${Math.min(100, pct)}%`,
               background: pct > 100 ? "var(--black-950)" : "var(--blue-600)",
             }}
           />
@@ -79,13 +83,17 @@ export function BudgetsView({
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(310px, 1fr))", gap: 18 }}>
-        {budgets.map((b) => {
+        {budgets.map((b, idx) => {
           const p = Math.round(toNum(b.pct_used));
           const rem = toNum(b.remaining_balance);
           return (
-            <div
+            <motion.div
               className="card card--pad"
               key={b.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2, delay: idx * 0.035, ease: [0.22, 1, 0.36, 1] }}
               style={{
                 cursor: "pointer",
                 borderColor: b.over_budget ? "var(--blue-600)" : "var(--border)",
@@ -177,7 +185,7 @@ export function BudgetsView({
                   {fmtMoney(rem, { currency })}
                 </b>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
@@ -220,6 +228,7 @@ export function BudgetsView({
         <BudgetFormModal
           initial={editing === "new" ? null : editing}
           categories={categories.filter((c) => c.type === "expense")}
+          currency={currency}
           onClose={() => setEditing(null)}
           onSaved={(msg) => {
             setEditing(null);
@@ -234,11 +243,13 @@ export function BudgetsView({
 function BudgetFormModal({
   initial,
   categories,
+  currency,
   onClose,
   onSaved,
 }: {
   initial: BudgetUtilization | null;
   categories: Category[];
+  currency: string;
   onClose: () => void;
   onSaved: (msg: string) => void;
 }) {
@@ -301,29 +312,24 @@ function BudgetFormModal({
       {!initial && (
         <div className="field" style={{ marginBottom: 14 }}>
           <label>Expense Category</label>
-          <select className="select" value={catId} onChange={(e) => setCatId(e.target.value)}>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <BaseSelect
+            value={catId}
+            onValueChange={setCatId}
+            options={categories.map((c) => ({ value: c.id, label: c.name }))}
+          />
         </div>
       )}
       <div className="grid2" style={{ marginBottom: 14 }}>
         <div className="field">
           <label>Monthly limit</label>
-          <input
-            className="input num"
-            value={limit}
-            onChange={(e) => setLimit(e.target.value.replace(/[^0-9.]/g, ""))}
-          />
+          <CurrencyInput value={limit} onValueChange={setLimit} currency={currency} />
         </div>
         <div className="field">
-          <label>Alert threshold (%)</label>
-          <input
-            className="input num"
+          <label>Alert threshold</label>
+          <BaseInput
+            className="num"
             value={threshold}
+            endAdornment={<span className="num" style={{ fontWeight: 700 }}>%</span>}
             onChange={(e) => setThreshold(e.target.value.replace(/[^0-9.]/g, ""))}
           />
         </div>
@@ -332,11 +338,11 @@ function BudgetFormModal({
         <div className="grid2">
           <div className="field">
             <label>Start date</label>
-            <input className="input" type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+            <BaseDatePicker value={start} onChange={setStart} ariaLabel="Start date" />
           </div>
           <div className="field">
             <label>End date</label>
-            <input className="input" type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+            <BaseDatePicker value={end} onChange={setEnd} ariaLabel="End date" />
           </div>
         </div>
       )}

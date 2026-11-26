@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { motion } from "motion/react";
 import { api } from "../api/client";
+import { BaseInput, BaseSelect, CurrencyInput } from "../components/BaseControls";
 import { Icon } from "../components/Icons";
 import { Modal } from "../components/Shell";
 import { PageHeroCard, PEXELS_WALLPAPERS } from "../components/Wallpapers";
@@ -65,12 +67,16 @@ export function AccountsView({
       </PageHeroCard>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(310px, 1fr))", gap: 18 }}>
-        {accounts.map((a) => {
+        {accounts.map((a, idx) => {
           const neg = toNum(a.current_balance) < 0;
           return (
-            <div
+            <motion.div
               className="card card--pad"
               key={a.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2, delay: idx * 0.035, ease: [0.22, 1, 0.36, 1] }}
               style={{ cursor: "pointer", display: "flex", flexDirection: "column" }}
               onClick={() => setDetail(a)}
             >
@@ -146,7 +152,7 @@ export function AccountsView({
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
@@ -302,8 +308,7 @@ function AccountFormModal({
       {err && <div className="error-banner">{err}</div>}
       <div className="field" style={{ marginBottom: 14 }}>
         <label>Account name</label>
-        <input
-          className="input"
+        <BaseInput
           placeholder="Everyday Checking"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -312,33 +317,38 @@ function AccountFormModal({
       <div className="grid2" style={{ marginBottom: 14 }}>
         <div className="field">
           <label>Account type</label>
-          <select
-            className="select"
+          <BaseSelect
             value={accountType}
-            onChange={(e) => setAccountType(e.target.value as AccountType)}
-          >
-            <option value="checking">Checking</option>
-            <option value="savings">Savings</option>
-            <option value="investment">Investment</option>
-            <option value="credit">Credit</option>
-            <option value="cash">Cash</option>
-          </select>
+            onValueChange={(v) => setAccountType(v as AccountType)}
+            options={[
+              { value: "checking", label: "Checking" },
+              { value: "savings", label: "Savings" },
+              { value: "investment", label: "Investment" },
+              { value: "credit", label: "Credit" },
+              { value: "cash", label: "Cash" },
+            ]}
+          />
         </div>
         <div className="field">
           <label>Currency</label>
-          <select className="select" value={cur} onChange={(e) => setCur(e.target.value)}>
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-            <option value="GBP">GBP</option>
-          </select>
+          <BaseSelect
+            value={cur}
+            onValueChange={setCur}
+            options={[
+              { value: "USD", label: "USD — US Dollar" },
+              { value: "EUR", label: "EUR — Euro" },
+              { value: "GBP", label: "GBP — Pound" },
+            ]}
+          />
         </div>
       </div>
       <div className="field">
         <label>Opening balance</label>
-        <input
-          className="input num"
+        <CurrencyInput
           value={opening}
-          onChange={(e) => setOpening(e.target.value.replace(/[^0-9.-]/g, ""))}
+          onValueChange={setOpening}
+          currency={cur}
+          allowNegative
         />
       </div>
     </Modal>

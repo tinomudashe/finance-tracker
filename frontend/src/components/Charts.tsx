@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { motion } from "motion/react";
 import type { CategoryBreakdownItem, TrendPoint } from "../types";
 import { fmtK, fmtMoney, toNum } from "../utils/format";
 
 const BLUE_BLACK_SERIES = [
-  "#0052ff",
+  "#0352ff",
   "#0b0f17",
   "#2563eb",
   "#334155",
@@ -13,7 +14,6 @@ const BLUE_BLACK_SERIES = [
   "#475569",
 ];
 
-/** Ensure any legacy non-blue/black color falls back cleanly to our Blue & Black ramp. */
 export function resolveBlueBlackColor(color: string | undefined, idx = 0): string {
   if (!color) return BLUE_BLACK_SERIES[idx % BLUE_BLACK_SERIES.length];
   return color;
@@ -59,8 +59,10 @@ export function DonutChart({
             const frac = val / total;
             const len = frac * c;
             const strokeColor = resolveBlueBlackColor(d.color, i);
-            const el = (
-              <circle
+            const segOffset = -offset;
+            offset += len;
+            return (
+              <motion.circle
                 key={d.category_id || i}
                 cx={cx}
                 cy={cx}
@@ -69,15 +71,16 @@ export function DonutChart({
                 stroke={strokeColor}
                 strokeWidth={hover === i ? thickness + 4 : thickness}
                 strokeDasharray={`${len} ${c - len}`}
-                strokeDashoffset={-offset}
+                strokeDashoffset={segOffset}
                 strokeLinecap="butt"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.28, delay: i * 0.04 }}
                 style={{ transition: "stroke-width .15s", cursor: "pointer" }}
                 onMouseEnter={() => setHover(i)}
                 onMouseLeave={() => setHover(null)}
               />
             );
-            offset += len;
-            return el;
           })}
       </svg>
       <div
@@ -87,6 +90,7 @@ export function DonutChart({
           display: "grid",
           placeItems: "center",
           textAlign: "center",
+          pointerEvents: "none",
         }}
       >
         <div>
@@ -158,6 +162,8 @@ export function BarChart({
           const inc = toNum(d.income);
           const exp = toNum(d.expense);
           const barH = height - 22;
+          const incH = Math.max(4, (inc / maxVal) * barH);
+          const expH = Math.max(4, (exp / maxVal) * barH);
           return (
             <div
               key={i}
@@ -174,20 +180,28 @@ export function BarChart({
               }}
             >
               <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: barH }}>
-                <div
+                <motion.div
                   title={`Income: ${fmtMoney(inc, { cents: false, currency })}`}
+                  initial={{ scaleY: 0 }}
+                  animate={{ scaleY: 1 }}
+                  transition={{ duration: 0.32, delay: i * 0.035, ease: [0.22, 1, 0.36, 1] }}
                   style={{
                     width: 16,
-                    height: Math.max(4, (inc / maxVal) * barH),
+                    height: incH,
+                    transformOrigin: "bottom",
                     background: "var(--chart-inc)",
                     borderRadius: "6px 6px 0 0",
                   }}
                 />
-                <div
+                <motion.div
                   title={`Expenses: ${fmtMoney(exp, { cents: false, currency })}`}
+                  initial={{ scaleY: 0 }}
+                  animate={{ scaleY: 1 }}
+                  transition={{ duration: 0.32, delay: i * 0.035 + 0.04, ease: [0.22, 1, 0.36, 1] }}
                   style={{
                     width: 16,
-                    height: Math.max(4, (exp / maxVal) * barH),
+                    height: expH,
+                    transformOrigin: "bottom",
                     background: "var(--chart-exp)",
                     borderRadius: "6px 6px 0 0",
                   }}
@@ -219,15 +233,18 @@ export function LineChart({ data, height = 190 }: { data: TrendPoint[]; height?:
 
   return (
     <svg viewBox={`0 0 ${w} ${height}`} width="100%" height={height} preserveAspectRatio="none">
-      <path
+      <motion.path
         d={path("income")}
         fill="none"
         stroke="var(--chart-inc)"
         strokeWidth="2.6"
         strokeLinecap="round"
         strokeLinejoin="round"
+        initial={{ pathLength: 0, opacity: 0.4 }}
+        animate={{ pathLength: 1, opacity: 1 }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       />
-      <path
+      <motion.path
         d={path("expense")}
         fill="none"
         stroke="var(--chart-exp)"
@@ -235,6 +252,9 @@ export function LineChart({ data, height = 190 }: { data: TrendPoint[]; height?:
         strokeDasharray="5 4"
         strokeLinecap="round"
         strokeLinejoin="round"
+        initial={{ pathLength: 0, opacity: 0.4 }}
+        animate={{ pathLength: 1, opacity: 1 }}
+        transition={{ duration: 0.55, delay: 0.06, ease: [0.22, 1, 0.36, 1] }}
       />
       {data.map((d, i) => (
         <g key={i}>

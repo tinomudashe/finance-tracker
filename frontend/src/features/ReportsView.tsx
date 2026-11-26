@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import { BaseDatePicker, SegmentedTabs } from "../components/BaseControls";
 import { BarChart, resolveBlueBlackColor } from "../components/Charts";
 import { Icon } from "../components/Icons";
 import { PageHeroCard } from "../components/Wallpapers";
@@ -108,35 +109,21 @@ export function ReportsView({
       </PageHeroCard>
 
       <div className="card card--pad" style={{ marginBottom: 18 }}>
-        <div className="seg" style={{ marginBottom: 16, maxWidth: 560 }}>
-          {periods.map((p) => (
-            <button
-              key={p.k}
-              className={period === p.k ? "active" : ""}
-              onClick={() => loadPeriod(p.k)}
-            >
-              {p.l}
-            </button>
-          ))}
-        </div>
+        <SegmentedTabs
+          value={period}
+          onValueChange={loadPeriod}
+          items={periods.map((p) => ({ value: p.k, label: p.l }))}
+          layoutId="reports-period-seg"
+          style={{ marginBottom: 16, maxWidth: 580 }}
+        />
         <div style={{ display: "flex", alignItems: "flex-end", gap: 14, flexWrap: "wrap" }}>
-          <div className="field" style={{ width: 185 }}>
+          <div className="field" style={{ width: 205 }}>
             <label>From</label>
-            <input
-              className="input"
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-            />
+            <BaseDatePicker value={fromDate} onChange={setFromDate} ariaLabel="From date" />
           </div>
-          <div className="field" style={{ width: 185 }}>
+          <div className="field" style={{ width: 205 }}>
             <label>To</label>
-            <input
-              className="input"
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-            />
+            <BaseDatePicker value={toDate} onChange={setToDate} ariaLabel="To date" />
           </div>
         </div>
       </div>
