@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-finance_dev_pass}
       POSTGRES_DB: ${POSTGRES_DB:-finance_tracker}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-55432}:5432"
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
     healthcheck:
@@ -35,6 +35,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://finance_user:finance_dev_pass@postgres:5432/finance_tracker
       REDIS_URL: redis://redis:6379/0
       APP_ENV: development
+      PYTHONPATH: /app
     volumes:
       - ./backend:/app
     ports:
