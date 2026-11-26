@@ -1,3 +1,4 @@
+import asyncio
 import json
 import time
 from typing import Any
@@ -13,17 +14,30 @@ class CacheAndSessionStore:
 
     def __init__(self) -> None:
         self._redis: Redis | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
         self._fallback_kv: dict[str, tuple[str, float]] = {}
 
     def _get_redis(self) -> Redis:
-        if self._redis is None:
+        running_loop = asyncio.get_running_loop()
+        if self._redis is None or self._loop is not running_loop or running_loop.is_closed():
             self._redis = Redis.from_url(
                 settings.REDIS_URL,
                 decode_responses=True,
                 socket_connect_timeout=0.5,
                 socket_timeout=0.5,
             )
+            self._loop = running_loop
         return self._redis
+
+    async def aclose(self) -> None:
+        if self._redis is not None:
+            try:
+                await self._redis.aclose()
+            except (RedisError, OSError, RuntimeError):
+                pass
+            finally:
+                self._redis = None
+                self._loop = None
 
     def _fallback_get(self, key: str) -> str | None:
         item = self._fallback_kv.get(key)

@@ -48,4 +48,5 @@ async def client(tmp_path: Path) -> AsyncGenerator[AsyncClient, None]:
         yield ac
 
     app.dependency_overrides.clear()
+    await store.aclose()
     await test_engine.dispose()
